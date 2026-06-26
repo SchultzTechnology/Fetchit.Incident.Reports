@@ -1,592 +1,947 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fetchit — AKS Node Starvation Incident</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fetchit — AKS Node Starvation Incident</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
-      line-height: 1.7;
-    }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        line-height: 1.7;
+      }
 
-    header {
-      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
-      border-bottom: 1px solid #2d3748;
-      padding: 48px 64px;
-    }
+      header {
+        background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+        border-bottom: 1px solid #2d3748;
+        padding: 48px 64px;
+      }
 
-    header .badge {
-      display: inline-block;
-      background: #4a1515;
-      color: #fc8181;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 16px;
-    }
+      header .badge {
+        display: inline-block;
+        background: #4a1515;
+        color: #fc8181;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+      }
 
-    header h1 { font-size: 36px; font-weight: 700; color: #f7fafc; letter-spacing: -0.5px; margin-bottom: 8px; }
-    header p  { color: #718096; font-size: 15px; }
+      header h1 {
+        font-size: 36px;
+        font-weight: 700;
+        color: #f7fafc;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+      }
+      header p {
+        color: #718096;
+        font-size: 15px;
+      }
 
-    header .meta { margin-top: 24px; display: flex; gap: 32px; flex-wrap: wrap; }
-    header .meta-item { display: flex; flex-direction: column; gap: 2px; }
-    header .meta-item .label { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    header .meta-item .value { font-size: 14px; color: #a0aec0; }
+      header .meta {
+        margin-top: 24px;
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+      }
+      header .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      header .meta-item .label {
+        font-size: 11px;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      header .meta-item .value {
+        font-size: 14px;
+        color: #a0aec0;
+      }
 
-    main { max-width: 1100px; margin: 0 auto; padding: 48px 64px; }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 64px;
+      }
 
-    section { margin-bottom: 56px; }
+      section {
+        margin-bottom: 56px;
+      }
 
-    h2 {
-      font-size: 22px; font-weight: 700; color: #f7fafc;
-      margin-bottom: 20px; padding-bottom: 12px;
-      border-bottom: 1px solid #2d3748;
-      display: flex; align-items: center; gap: 10px;
-    }
+      h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #f7fafc;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #2d3748;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    h2 .icon {
-      width: 28px; height: 28px; border-radius: 6px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
+      h2 .icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
 
-    h3 { font-size: 16px; font-weight: 600; color: #cbd5e0; margin: 24px 0 12px; }
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #cbd5e0;
+        margin: 24px 0 12px;
+      }
 
-    p { color: #a0aec0; margin-bottom: 12px; font-size: 15px; }
+      p {
+        color: #a0aec0;
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
 
-    ul { padding-left: 24px; color: #a0aec0; font-size: 15px; line-height: 2.2; margin-bottom: 12px; }
+      ul {
+        padding-left: 24px;
+        color: #a0aec0;
+        font-size: 15px;
+        line-height: 2.2;
+        margin-bottom: 12px;
+      }
 
-    .card {
-      background: #1a1f2e; border: 1px solid #2d3748;
-      border-radius: 12px; padding: 24px; margin-bottom: 20px;
-    }
-    .card.warning { border-left: 3px solid #ed8936; }
-    .card.success { border-left: 3px solid #48bb78; }
-    .card.info    { border-left: 3px solid #4299e1; }
-    .card.error   { border-left: 3px solid #fc8181; }
+      .card {
+        background: #1a1f2e;
+        border: 1px solid #2d3748;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      .card.warning {
+        border-left: 3px solid #ed8936;
+      }
+      .card.success {
+        border-left: 3px solid #48bb78;
+      }
+      .card.info {
+        border-left: 3px solid #4299e1;
+      }
+      .card.error {
+        border-left: 3px solid #fc8181;
+      }
 
-    .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .card.warning .card-title { color: #ed8936; }
-    .card.success .card-title { color: #48bb78; }
-    .card.info    .card-title { color: #4299e1; }
-    .card.error   .card-title { color: #fc8181; }
+      .card-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+      }
+      .card.warning .card-title {
+        color: #ed8936;
+      }
+      .card.success .card-title {
+        color: #48bb78;
+      }
+      .card.info .card-title {
+        color: #4299e1;
+      }
+      .card.error .card-title {
+        color: #fc8181;
+      }
 
-    code {
-      font-family: 'Fira Code', 'Cascadia Code', monospace;
-      background: #2d3748; color: #81e6d9;
-      padding: 2px 7px; border-radius: 4px; font-size: 13px;
-    }
+      code {
+        font-family: "Fira Code", "Cascadia Code", monospace;
+        background: #2d3748;
+        color: #81e6d9;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
 
-    pre {
-      background: #141820; border: 1px solid #2d3748;
-      border-radius: 10px; padding: 20px 24px;
-      overflow-x: auto; margin: 16px 0;
-    }
-    pre code { background: none; padding: 0; font-size: 13px; color: #e2e8f0; line-height: 1.8; }
+      pre {
+        background: #141820;
+        border: 1px solid #2d3748;
+        border-radius: 10px;
+        padding: 20px 24px;
+        overflow-x: auto;
+        margin: 16px 0;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: 13px;
+        color: #e2e8f0;
+        line-height: 1.8;
+      }
 
-    .good { color: #48bb78; }
-    .bad  { color: #fc8181; }
-    .warn { color: #ed8936; }
+      .good {
+        color: #48bb78;
+      }
+      .bad {
+        color: #fc8181;
+      }
+      .warn {
+        color: #ed8936;
+      }
 
-    /* Timeline */
-    .timeline { position: relative; padding-left: 32px; margin: 24px 0; }
-    .timeline::before {
-      content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
-      width: 2px; background: #2d3748;
-    }
-    .timeline-item { position: relative; margin-bottom: 20px; }
-    .timeline-item::before {
-      content: ''; position: absolute; left: -26px; top: 6px;
-      width: 10px; height: 10px; border-radius: 50%;
-      background: #4299e1; border: 2px solid #0f1117;
-    }
-    .timeline-item.warning::before { background: #ed8936; }
-    .timeline-item.success::before { background: #48bb78; }
-    .timeline-item.error::before   { background: #fc8181; }
-    .timeline-time { font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 2px; }
-    .timeline-body { font-size: 14px; color: #a0aec0; }
-    .timeline-body strong { color: #e2e8f0; }
+      /* Timeline */
+      .timeline {
+        position: relative;
+        padding-left: 32px;
+        margin: 24px 0;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #2d3748;
+      }
+      .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+      }
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: -26px;
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #4299e1;
+        border: 2px solid #0f1117;
+      }
+      .timeline-item.warning::before {
+        background: #ed8936;
+      }
+      .timeline-item.success::before {
+        background: #48bb78;
+      }
+      .timeline-item.error::before {
+        background: #fc8181;
+      }
+      .timeline-time {
+        font-family: monospace;
+        font-size: 12px;
+        color: #4a5568;
+        margin-bottom: 2px;
+      }
+      .timeline-body {
+        font-size: 14px;
+        color: #a0aec0;
+      }
+      .timeline-body strong {
+        color: #e2e8f0;
+      }
 
-    /* Summary grid */
-    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
-    .summary-box {
-      background: #1a1f2e; border: 1px solid #2d3748;
-      border-radius: 10px; padding: 20px; text-align: center;
-    }
-    .summary-box .number { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
-    .summary-box .desc { font-size: 12px; color: #4a5568; text-transform: uppercase; letter-spacing: 1px; }
+      /* Summary grid */
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .summary-box {
+        background: #1a1f2e;
+        border: 1px solid #2d3748;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+      }
+      .summary-box .number {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .summary-box .desc {
+        font-size: 12px;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
 
-    /* Table */
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
-    th {
-      text-align: left; padding: 10px 16px; background: #1a1f2e;
-      color: #718096; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 1px; border-bottom: 1px solid #2d3748;
-    }
-    td { padding: 12px 16px; border-bottom: 1px solid #1a1f2e; color: #a0aec0; vertical-align: top; }
-    tr:hover td { background: #1a1f2e; }
-    td.mono { font-family: monospace; font-size: 13px; color: #81e6d9; }
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      th {
+        text-align: left;
+        padding: 10px 16px;
+        background: #1a1f2e;
+        color: #718096;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #2d3748;
+      }
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #1a1f2e;
+        color: #a0aec0;
+        vertical-align: top;
+      }
+      tr:hover td {
+        background: #1a1f2e;
+      }
+      td.mono {
+        font-family: monospace;
+        font-size: 13px;
+        color: #81e6d9;
+      }
 
-    .pill {
-      display: inline-block; padding: 2px 10px;
-      border-radius: 20px; font-size: 11px; font-weight: 700;
-    }
-    .pill.open     { background: #4a1515; color: #fc8181; }
-    .pill.resolved { background: #0d2818; color: #68d391; }
-    .pill.action   { background: #2d2205; color: #f6ad55; }
+      .pill {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .pill.open {
+        background: #4a1515;
+        color: #fc8181;
+      }
+      .pill.resolved {
+        background: #0d2818;
+        color: #68d391;
+      }
+      .pill.action {
+        background: #2d2205;
+        color: #f6ad55;
+      }
 
-    /* The illustration */
-    .illustration {
-      background: #141820; border: 1px solid #2d3748;
-      border-radius: 12px; padding: 40px;
-      margin: 32px 0; text-align: center;
-      position: relative; overflow: hidden;
-    }
+      /* The illustration */
+      .illustration {
+        background: #141820;
+        border: 1px solid #2d3748;
+        border-radius: 12px;
+        padding: 40px;
+        margin: 32px 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
 
-    .illustration::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 120%, rgba(252,129,129,0.06) 0%, transparent 70%);
-    }
+      .illustration::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse at 50% 120%,
+          rgba(252, 129, 129, 0.06) 0%,
+          transparent 70%
+        );
+      }
 
-    .cpu-arena {
-      display: inline-flex; gap: 24px; align-items: center;
-      justify-content: center; margin-bottom: 32px;
-    }
+      .cpu-arena {
+        display: inline-flex;
+        gap: 24px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 32px;
+      }
 
-    .cpu-box {
-      background: #1a1f2e; border: 2px solid #fc8181;
-      border-radius: 12px; padding: 20px 28px;
-      position: relative;
-    }
+      .cpu-box {
+        background: #1a1f2e;
+        border: 2px solid #fc8181;
+        border-radius: 12px;
+        padding: 20px 28px;
+        position: relative;
+      }
 
-    .cpu-box .cpu-label {
-      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-      color: #fc8181; margin-bottom: 8px; font-weight: 700;
-    }
+      .cpu-box .cpu-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #fc8181;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
 
-    .cpu-box .cpu-icon { font-size: 48px; line-height: 1; }
-    .cpu-box .cpu-face { font-size: 16px; margin-top: 4px; }
+      .cpu-box .cpu-icon {
+        font-size: 48px;
+        line-height: 1;
+      }
+      .cpu-box .cpu-face {
+        font-size: 16px;
+        margin-top: 4px;
+      }
 
-    .cpu-box .sweat {
-      position: absolute; top: 8px; right: 8px; font-size: 20px;
-      animation: sweat 1.5s ease-in-out infinite;
-    }
+      .cpu-box .sweat {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 20px;
+        animation: sweat 1.5s ease-in-out infinite;
+      }
 
-    @keyframes sweat {
-      0%, 100% { transform: translateY(0); opacity: 1; }
-      50% { transform: translateY(4px); opacity: 0.5; }
-    }
+      @keyframes sweat {
+        0%,
+        100% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        50% {
+          transform: translateY(4px);
+          opacity: 0.5;
+        }
+      }
 
-    .vs { font-size: 28px; font-weight: 900; color: #4a5568; }
+      .vs {
+        font-size: 28px;
+        font-weight: 900;
+        color: #4a5568;
+      }
 
-    .pod-horde {
-      display: grid; grid-template-columns: repeat(10, 1fr);
-      gap: 6px; max-width: 480px; margin: 0 auto;
-    }
+      .pod-horde {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 6px;
+        max-width: 480px;
+        margin: 0 auto;
+      }
 
-    .pod {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: #1a1f2e; border: 1px solid #9f7aea;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; transition: transform 0.2s;
-      cursor: default;
-    }
+      .pod {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: #1a1f2e;
+        border: 1px solid #9f7aea;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: transform 0.2s;
+        cursor: default;
+      }
 
-    .pod:hover { transform: scale(1.2); z-index: 10; position: relative; }
-    .pod.evicted { border-color: #4a5568; opacity: 0.3; font-size: 12px; }
-    .pod.kubelet { border-color: #fc8181; background: #2d1515; }
+      .pod:hover {
+        transform: scale(1.2);
+        z-index: 10;
+        position: relative;
+      }
+      .pod.evicted {
+        border-color: #4a5568;
+        opacity: 0.3;
+        font-size: 12px;
+      }
+      .pod.kubelet {
+        border-color: #fc8181;
+        background: #2d1515;
+      }
 
-    .pod-label {
-      font-size: 12px; color: #4a5568; margin-top: 12px;
-      text-align: center;
-    }
+      .pod-label {
+        font-size: 12px;
+        color: #4a5568;
+        margin-top: 12px;
+        text-align: center;
+      }
 
-    footer {
-      border-top: 1px solid #2d3748; padding: 32px 64px;
-      text-align: center; color: #4a5568; font-size: 13px;
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <div class="badge">⚠️ Infrastructure Incident</div>
-  <h1>AKS Node Starvation — Kubelet Eviction Event</h1>
-  <p>Resource exhaustion on <code>aks-npapps2-34924295-vmss000006</code> causing TaintManagerEviction and pod disruption</p>
-  <div class="meta">
-    <div class="meta-item">
-      <span class="label">Date</span>
-      <span class="value">June 26, 2026</span>
-    </div>
-    <div class="meta-item">
-      <span class="label">Node</span>
-      <span class="value">aks-npapps2-34924295-vmss000006</span>
-    </div>
-    <div class="meta-item">
-      <span class="label">VM Size</span>
-      <span class="value">Standard_E2bds_v5 (2 vCPU)</span>
-    </div>
-    <div class="meta-item">
-      <span class="label">Status</span>
-      <span class="value" style="color:#ed8936;">⚠ Self-Recovered · Action Required</span>
-    </div>
-  </div>
-</header>
-
-<main>
-
-  <!-- Summary -->
-  <section>
-    <h2><span class="icon" style="background:#2d1515;">📊</span> Executive Summary</h2>
-    <p>
-      At approximately <strong style="color:#e2e8f0;">15:10 UTC</strong>, a Kubernetes node running 102 pods on a
-      2-core VM reached CPU saturation. The <code>kubelet</code> — the node's management process — was starved of
-      CPU cycles and failed to send its heartbeat to the Kubernetes control plane. The cluster declared the node
-      <strong style="color:#fc8181;">NotReady</strong> and initiated a <code>TaintManagerEviction</code>.
-    </p>
-    <p>
-      The node self-recovered when the eviction process reduced pod network activity, relieving CPU pressure enough
-      for the kubelet to resume heartbeating. No data was lost, but the event exposed a serious infrastructure
-      risk: <strong style="color:#e2e8f0;">the node is critically over-tenanted and will fail again under load.</strong>
-    </p>
-
-    <div class="summary-grid">
-      <div class="summary-box">
-        <div class="number" style="color:#fc8181;">102</div>
-        <div class="desc">Pods on node (max 110)</div>
+      footer {
+        border-top: 1px solid #2d3748;
+        padding: 32px 64px;
+        text-align: center;
+        color: #4a5568;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="badge">⚠️ Infrastructure Incident</div>
+      <h1>AKS Node Starvation — Kubelet Eviction Event</h1>
+      <p>
+        Resource exhaustion on <code>aks-npapps2-34924295-vmss000006</code>
+        causing transient node failure, TaintManagerEviction, and broader cluster disruption
+      </p>
+      <div class="meta">
+        <div class="meta-item">
+          <span class="label">Date</span>
+          <span class="value">June 26, 2026</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Node</span>
+          <span class="value">aks-npapps2-34924295-vmss000006</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">VM Size</span>
+          <span class="value">Standard_E2bds_v5 (2 vCPU)</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Status</span>
+          <span class="value" style="color: #ed8936"
+            >⚠ Self-Recovered · Action Required</span
+          >
+        </div>
       </div>
-      <div class="summary-box">
-        <div class="number" style="color:#fc8181;">273%</div>
-        <div class="desc">CPU Limit overcommit</div>
-      </div>
-      <div class="summary-box">
-        <div class="number" style="color:#ed8936;">2</div>
-        <div class="desc">Physical vCPUs available</div>
-      </div>
-      <div class="summary-box">
-        <div class="number" style="color:#48bb78;">~0</div>
-        <div class="desc">Minutes to self-recover</div>
-      </div>
-    </div>
-  </section>
+    </header>
 
-  <!-- The Illustration -->
-  <section>
-    <h2><span class="icon" style="background:#2d1a0f;">🎨</span> Visualised</h2>
+    <main>
+      <!-- Summary -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #2d1515">📊</span> Executive
+          Summary
+        </h2>
+        <p>
+          At approximately <strong style="color: #e2e8f0">15:10 UTC</strong>, a
+          Kubernetes node running 102 pods on a 2-core VM reached total resource saturation.
+          The <code>kubelet</code> — the node's management process — was starved
+          of CPU cycles and failed to send its heartbeat to the Kubernetes
+          control plane. The cluster declared the node
+          <strong style="color: #fc8181">Unreachable</strong>, applied a <code>NoExecute</code> taint, and initiated a
+          mass <code>TaintManagerEviction</code>.
+        </p>
+        <p>
+          This is known as a <strong>"Node Flap"</strong>. The node self-recovered when the eviction process suspended
+          pod network activity, relieving pressure enough for the kubelet to resume 
+          heartbeating just seconds later. Even though deletions were quickly cancelled, 
+          the sudden start-and-stop disruption broke network states across multiple workloads (including our EMQX brokers).
+          No data was lost, but the event exposed a serious infrastructure risk:
+          <strong style="color: #e2e8f0"
+            >the node is critically over-tenanted based on its limits and will fail again under load.</strong
+          >
+        </p>
 
-    <div class="illustration">
-      <p style="color:#4a5568; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:24px;">102 pods. 2 CPUs. One very bad time.</p>
-
-      <div class="cpu-arena">
-        <div style="text-align:center;">
-          <div class="cpu-box">
-            <div class="sweat">💧</div>
-            <div class="cpu-label">vCPU 0</div>
-            <div class="cpu-icon">🖥️</div>
-            <div class="cpu-face" style="color:#fc8181;">😰</div>
+        <div class="summary-grid">
+          <div class="summary-box">
+            <div class="number" style="color: #fc8181">102</div>
+            <div class="desc">Pods on node (max 110)</div>
+          </div>
+          <div class="summary-box">
+            <div class="number" style="color: #fc8181">273%</div>
+            <div class="desc">CPU Limit overcommit</div>
+          </div>
+          <div class="summary-box">
+            <div class="number" style="color: #ed8936">130%</div>
+            <div class="desc">Memory Limit overcommit</div>
+          </div>
+          <div class="summary-box">
+            <div class="number" style="color: #48bb78">~5s</div>
+            <div class="desc">Eviction phase duration</div>
           </div>
         </div>
-        <div class="vs">⚡</div>
-        <div style="text-align:center;">
-          <div class="cpu-box">
-            <div class="sweat" style="animation-delay:0.75s;">💧</div>
-            <div class="cpu-label">vCPU 1</div>
-            <div class="cpu-icon">🖥️</div>
-            <div class="cpu-face" style="color:#fc8181;">😱</div>
+      </section>
+
+      <!-- The Illustration -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #2d1a0f">🎨</span> Visualised
+        </h2>
+
+        <div class="illustration">
+          <p
+            style="
+              color: #4a5568;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 24px;
+            "
+          >
+            102 pods. 2 CPUs. One very bad time.
+          </p>
+
+          <div class="cpu-arena">
+            <div style="text-align: center">
+              <div class="cpu-box">
+                <div class="sweat">💧</div>
+                <div class="cpu-label">vCPU 0</div>
+                <div class="cpu-icon">🖥️</div>
+                <div class="cpu-face" style="color: #fc8181">😰</div>
+              </div>
+            </div>
+            <div class="vs">⚡</div>
+            <div style="text-align: center">
+              <div class="cpu-box">
+                <div class="sweat" style="animation-delay: 0.75s">💧</div>
+                <div class="cpu-label">vCPU 1</div>
+                <div class="cpu-icon">🖥️</div>
+                <div class="cpu-face" style="color: #fc8181">😱</div>
+              </div>
+            </div>
+          </div>
+
+          <p
+            style="
+              color: #fc8181;
+              font-size: 13px;
+              margin-bottom: 20px;
+              font-weight: 600;
+            "
+          >
+            ↑ 2 CPUs vs ↓ 102 Pods
+          </p>
+
+          <div class="pod-horde">
+            <!-- 10 rows of 10 pods = 100, plus 2 more -->
+            <div class="pod kubelet" title="kubelet">💀</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="emqx broker">📡</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+            <div class="pod" title="phone-worker">📞</div>
+          </div>
+          <div class="pod-label">
+            <span style="color: #9f7aea">📞 phone-worker pods</span>
+            &nbsp;·&nbsp;
+            <span style="color: #4299e1">📡 emqx broker</span> &nbsp;·&nbsp;
+            <span style="color: #fc8181">💀 kubelet (starved)</span>
+            <br />Hover to inspect. 102 / 110 pod slots consumed on a 2-core
+            node.
           </div>
         </div>
-      </div>
+      </section>
 
-      <p style="color:#fc8181; font-size:13px; margin-bottom:20px; font-weight:600;">↑ 2 terrified CPUs vs ↓</p>
+      <!-- Timeline -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #2d1515">⏱️</span> Incident
+          Timeline
+        </h2>
 
-      <div class="pod-horde">
-        <!-- 10 rows of 10 pods = 100, plus 2 more -->
-        <div class="pod kubelet" title="kubelet">💀</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="emqx broker">📡</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-        <div class="pod" title="phone-worker">📞</div>
-      </div>
-      <div class="pod-label">
-        <span style="color:#9f7aea;">📞 phone-worker pods</span> &nbsp;·&nbsp;
-        <span style="color:#4299e1;">📡 emqx broker</span> &nbsp;·&nbsp;
-        <span style="color:#fc8181;">💀 kubelet (starved)</span>
-        <br/>Hover to inspect. 102 / 110 pod slots consumed on a 2-core node.
-      </div>
-    </div>
-  </section>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-time">Pre-incident</div>
+            <div class="timeline-body">
+              Node <strong>aks-npapps2-34924295-vmss000006</strong> running
+              102/110 pods. CPU limits at 273% of capacity (5200m / 1900m
+              available) and memory limits at 130%.
+            </div>
+          </div>
+          <div class="timeline-item error">
+            <div class="timeline-time">&lt; 15:10:19 UTC</div>
+            <div class="timeline-body">
+              Multiple pods (emqx broker + phone-workers) spike CPU
+              simultaneously. Linux kernel begins throttling. The
+              <strong>kubelet process hangs</strong> and misses its 40s heartbeat threshold to the AKS API server. 
+            </div>
+          </div>
+          <div class="timeline-item error">
+            <div class="timeline-time">Moments Later</div>
+            <div class="timeline-body">
+              <strong>Control Plane marks node as <code>Unreachable</code></strong>. Adds the <code>node.kubernetes.io/unreachable:NoExecute</code> taint. <code>TaintManagerEviction</code> initiates shutdown orders for all 102 co-located pods.
+            </div>
+          </div>
+          <div class="timeline-item warning">
+            <div class="timeline-time">15:10:19 UTC</div>
+            <div class="timeline-body">
+              Eviction process suspends pod network traffic. CPU pressure
+              <strong>drops momentarily</strong>. Kubelet regains CPU cycles and issues a successful heartbeat. Node transitions to <code>Ready</code>.
+            </div>
+          </div>
+          <div class="timeline-item success">
+            <div class="timeline-time">15:10:24 UTC (5-second gap)</div>
+            <div class="timeline-body">
+              Taint Manager finishes processing the heartbeat and issues
+              <strong>"Cancelling deletion"</strong> messages to all pods simultaneously. Node taint is removed.
+            </div>
+          </div>
+          <div class="timeline-item info">
+            <div class="timeline-time">15:12:57 UTC</div>
+            <div class="timeline-body">
+              OpenTelemetry (OTEL) collector agent spins up tracking of log files to index the massive volume of errors generated by broken pod networks.
+            </div>
+          </div>
+        </div>
+      </section>
 
-  <!-- Timeline -->
-  <section>
-    <h2><span class="icon" style="background:#2d1515;">⏱️</span> Incident Timeline</h2>
+      <!-- Blast Radius -->
+      <section>
+        <h2><span class="icon" style="background: #2d1515">💥</span> Blast Radius & Impact</h2>
+        <p>
+          Even though the pod deletions were ultimately <em>cancelled</em>, a "cancelled deletion" in Kubernetes is still highly disruptive to network-based workloads.
+        </p>
+        <div class="card error">
+          <div class="card-title">Eventual Application Failures</div>
+          <p style="margin: 0; margin-bottom: 12px;">The 5-second "flap" window broke connections across multiple critical applications:</p>
+          <ul style="padding-left: 20px; color: #a0aec0; line-height: 2;">
+            <li><strong>EMQX Broker:</strong> As an MQTT broker, it is highly sensitive to network state. The transient dropout caused stale socket connections, forcing clients and the broker cluster to struggle with partition/split-brain recovery.</li>
+            <li><strong>Connection Resets:</strong> Some pods received early `SIGTERM` signals before the cancellation arrived, putting them into an awkward "shutting down" state while still actively marked as Running.</li>
+            <li><strong>Database Clients:</strong> Any active database transactions on `phone-worker` pods were severed when the node temporarily lost network consensus.</li>
+          </ul>
+        </div>
+      </section>
 
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="timeline-time">Pre-incident</div>
-        <div class="timeline-body">Node <strong>aks-npapps2-34924295-vmss000006</strong> running 102/110 pods. CPU limits at 273% of capacity (5200m / 1900m available).</div>
-      </div>
-      <div class="timeline-item error">
-        <div class="timeline-time">~15:10 UTC</div>
-        <div class="timeline-body">Multiple pods (emqx broker + phone-workers) spike CPU simultaneously. Linux kernel begins throttling. The <strong>kubelet process loses CPU time</strong>.</div>
-      </div>
-      <div class="timeline-item error">
-        <div class="timeline-time">~15:10 + 40s</div>
-        <div class="timeline-body">Kubelet misses heartbeat threshold (40s default). <strong>Kubernetes Control Plane marks node as <code>NotReady</code></strong>. <code>TaintManagerEviction</code> initiated.</div>
-      </div>
-      <div class="timeline-item warning">
-        <div class="timeline-time">~15:11 UTC</div>
-        <div class="timeline-body">Eviction process begins suspending pod network traffic. CPU pressure <strong>immediately drops</strong>. Kubelet regains CPU cycles.</div>
-      </div>
-      <div class="timeline-item success">
-        <div class="timeline-time">~15:11 + seconds</div>
-        <div class="timeline-body">Kubelet sends heartbeat. Control Plane issues <strong>"Cancelling deletion"</strong> messages. Node returns to <code>Ready</code>. Self-recovered.</div>
-      </div>
-    </div>
-  </section>
+      <!-- Root Cause -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #2d1515">🐛</span> Root Cause
+          Analysis
+        </h2>
 
-  <!-- Root Cause -->
-  <section>
-    <h2><span class="icon" style="background:#2d1515;">🐛</span> Root Cause Analysis</h2>
+        <p>
+          This was <strong style="color: #e2e8f0">not a software bug</strong>.
+          It was a
+          <strong style="color: #fc8181">Resource Exhaustion event</strong> —
+          102 pods fighting over 2 CPUs, with the node's management system
+          losing the fight.
+        </p>
 
-    <p>This was <strong style="color:#e2e8f0;">not a software bug</strong>. It was a <strong style="color:#fc8181;">Resource Exhaustion event</strong> — 102 pods fighting over 2 CPUs, with the node's management system losing the fight.</p>
+        <h3>Contributing Factor 1 — Extreme Pod Density</h3>
+        <div class="card error">
+          <div class="card-title">102 / 110 pods on a 2-core VM</div>
+          <p style="margin: 0">
+            A <code>Standard_E2bds_v5</code> has 2 vCPUs. Managing
+            liveness/readiness probes, metric scraping, and log rotation for 102
+            separate containers is an enormous overhead on a 2-core machine. The
+            kubelet itself competes with every other process for those same 2
+            cores.
+          </p>
+        </div>
 
-    <h3>Contributing Factor 1 — Extreme Pod Density</h3>
-    <div class="card error">
-      <div class="card-title">102 / 110 pods on a 2-core VM</div>
-      <p style="margin:0;">A <code>Standard_E2bds_v5</code> has 2 vCPUs. Managing liveness/readiness probes, metric scraping, and log rotation for 102 separate containers is an enormous overhead on a 2-core machine. The kubelet itself competes with every other process for those same 2 cores.</p>
-    </div>
+        <h3>Contributing Factor 2 — 273% CPU / 130% Memory Overcommit</h3>
+        <div class="card error">
+          <div class="card-title">CPU Limits: 5200m on a 1900m node</div>
+          <p style="margin: 0; margin-bottom: 12px">
+            Pod <em>requests</em> (1356m, 71%) were reasonable — the scheduler
+            used them to properly place pods. But <em>limits</em> (5200m, 273% CPU / 130% Memory)
+            allowed pods to burst well beyond what physically existed. When
+            several pods burst simultaneously:
+          </p>
+          <ul style="padding-left: 20px; color: #a0aec0; line-height: 2">
+            <li>
+              The Linux kernel's CFS scheduler began aggressively throttling all
+              processes
+            </li>
+            <li>The kubelet got throttled along with everything else</li>
+            <li>
+              It could no longer complete its heartbeat within the 40-second
+              window
+            </li>
+          </ul>
+        </div>
+      </section>
 
-    <h3>Contributing Factor 2 — 273% CPU Limit Overcommitment</h3>
-    <div class="card error">
-      <div class="card-title">CPU Limits: 5200m on a 1900m node</div>
-      <p style="margin:0; margin-bottom:12px;">Pod <em>requests</em> (1356m, 71%) were reasonable — the scheduler used them to place pods. But <em>limits</em> (5200m, 273%) allow pods to burst well beyond what physically exists. When several pods burst simultaneously:</p>
-      <ul style="padding-left:20px; color:#a0aec0; line-height:2;">
-        <li>The Linux kernel's CFS scheduler begins aggressively throttling all processes</li>
-        <li>The kubelet gets throttled along with everything else</li>
-        <li>It can no longer complete its heartbeat within the 40-second window</li>
-      </ul>
-    </div>
+      <!-- Recommendations -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #0d2818">🛠️</span> Recommended
+          Actions
+        </h2>
 
-    <h3>The Cascade</h3>
-    <table>
-      <thead>
-        <tr><th>Step</th><th>What happened</th><th>Effect</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1</td>
-          <td>Pod burst activity spikes CPU</td>
-          <td class="bad">All processes throttled by kernel</td>
-        </tr>
-        <tr>
-          <td>2</td>
-          <td>Kubelet misses 40s heartbeat</td>
-          <td class="bad">Control plane marks node <code>NotReady</code></td>
-        </tr>
-        <tr>
-          <td>3</td>
-          <td><code>TaintManagerEviction</code> starts</td>
-          <td class="warn">Pods begin to be terminated/suspended</td>
-        </tr>
-        <tr>
-          <td>4</td>
-          <td>Network traffic reduced by eviction</td>
-          <td class="good">CPU pressure drops, kubelet recovers</td>
-        </tr>
-        <tr>
-          <td>5</td>
-          <td>Kubelet sends heartbeat</td>
-          <td class="good">Node returns to <code>Ready</code>, eviction cancelled</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+        <p>
+          This node <strong style="color: #e2e8f0">will fail again</strong> under
+          similar load conditions without structural changes. The following
+          actions are recommended in priority order:
+        </p>
 
-  <!-- Recommendations -->
-  <section>
-    <h2><span class="icon" style="background:#0d2818;">🛠️</span> Recommended Actions</h2>
+        <div class="card error">
+          <div class="card-title">
+            🔴 Priority 1 — Upgrade the Node Pool VM Size
+          </div>
+          <p>
+            Move the <code>npapps2</code> node pool from
+            <code>Standard_E2bds_v5</code> (2 vCPU) to at least a
+            <code>Standard_E4bds_v5</code> (4 vCPU) or
+            <code>Standard_E8bds_v5</code> (8 vCPU). This gives the kubelet
+            dedicated breathing room and reduces the proportion of CPU consumed
+            by node management overhead.
+          </p>
+          <p style="margin: 0">
+            <strong style="color: #e2e8f0">Impact:</strong> Eliminates the
+            kubelet starvation failure mode entirely.
+          </p>
+        </div>
 
-    <p>This node <strong style="color:#e2e8f0;">will fail again</strong> under similar load conditions without structural changes. The following actions are recommended in priority order:</p>
+        <div class="card warning">
+          <div class="card-title">🟠 Priority 2 — Reduce Max Pods Per Node</div>
+          <p>
+            Lower <code>--max-pods</code> on this node pool (currently 110) to
+            force Kubernetes to spread pods across more nodes rather than
+            packing them onto one. A value of 50–60 is more appropriate for a
+            2-core node.
+          </p>
+          <p style="margin: 0">
+            <strong style="color: #e2e8f0">Impact:</strong> Reduces pod density
+            per node, lowering management overhead on the kubelet.
+          </p>
+        </div>
 
-    <div class="card error">
-      <div class="card-title">🔴 Priority 1 — Upgrade the Node Pool VM Size</div>
-      <p>Move the <code>npapps2</code> node pool from <code>Standard_E2bds_v5</code> (2 vCPU) to at least a <code>Standard_E4bds_v5</code> (4 vCPU) or <code>Standard_E8bds_v5</code> (8 vCPU). This gives the kubelet dedicated breathing room and reduces the proportion of CPU consumed by node management overhead.</p>
-      <p style="margin:0;"><strong style="color:#e2e8f0;">Impact:</strong> Eliminates the kubelet starvation failure mode entirely.</p>
-    </div>
+        <div class="card warning">
+          <div class="card-title">
+            🟠 Priority 3 — Lower CPU/Memory Limits on phone-worker Pods
+          </div>
+          <p>
+            The extreme overcommitment is the trigger. Set limits on
+            phone-worker pods to a value closer to their actual usage rather
+            than allowing unbounded bursting. A limit of
+            <code>200m–500m</code> per pod would prevent a burst storm from
+            saturating the node.
+          </p>
+          <p style="margin: 0">
+            <strong style="color: #e2e8f0">Impact:</strong> Prevents
+            simultaneous bursting from triggering kernel-level throttling of the
+            kubelet.
+          </p>
+        </div>
 
-    <div class="card warning">
-      <div class="card-title">🟠 Priority 2 — Reduce Max Pods Per Node</div>
-      <p>Lower <code>--max-pods</code> on this node pool (currently 110) to force Kubernetes to spread pods across more nodes rather than packing them onto one. A value of 50–60 is more appropriate for a 2-core node.</p>
-      <p style="margin:0;"><strong style="color:#e2e8f0;">Impact:</strong> Reduces pod density per node, lowering management overhead on the kubelet.</p>
-    </div>
+        <div class="card info">
+          <div class="card-title">🔵 Priority 4 — Add Node Autoscaling</div>
+          <p>
+            Enable the AKS Cluster Autoscaler on this node pool so that when pod
+            demand increases, new nodes are provisioned automatically rather
+            than all load concentrating on a single node.
+          </p>
+          <p style="margin: 0">
+            <strong style="color: #e2e8f0">Impact:</strong> Prevents this class
+            of problem from recurring as the number of phone-worker clients
+            grows.
+          </p>
+        </div>
+      </section>
 
-    <div class="card warning">
-      <div class="card-title">🟠 Priority 3 — Lower CPU Limits on phone-worker Pods</div>
-      <p>The 273% overcommitment is the trigger. Set CPU limits on phone-worker pods to a value closer to their actual usage rather than allowing unbounded bursting. A limit of <code>200m–500m</code> per pod would prevent a burst storm from saturating the node.</p>
-      <p style="margin:0;"><strong style="color:#e2e8f0;">Impact:</strong> Prevents simultaneous bursting from triggering kernel-level throttling of the kubelet.</p>
-    </div>
+      <!-- What did NOT happen -->
+      <section>
+        <h2>
+          <span class="icon" style="background: #0d2818">✅</span> What Went
+          Well
+        </h2>
+        <ul>
+          <li>
+            The cluster
+            <strong style="color: #e2e8f0">self-recovered</strong> without manual
+            intervention in under a minute.
+          </li>
+          <li>
+            The <code>TaintManagerEviction</code> mechanism worked as designed —
+            by reducing load it inadvertently resolved the very condition that
+            triggered it.
+          </li>
+          <li>
+            No persistent data was lost. Application services resumed normally
+            after clients re-established connections.
+          </li>
+          <li>
+            Robust logging (including OTEL picking up the trail) allowed full
+            post-hoc reconstruction of the event timeline.
+          </li>
+        </ul>
+      </section>
+    </main>
 
-    <div class="card info">
-      <div class="card-title">🔵 Priority 4 — Add Node Autoscaling</div>
-      <p>Enable the AKS Cluster Autoscaler on this node pool so that when pod demand increases, new nodes are provisioned automatically rather than all load concentrating on a single node.</p>
-      <p style="margin:0;"><strong style="color:#e2e8f0;">Impact:</strong> Prevents this class of problem from recurring as the number of phone-worker clients grows.</p>
-    </div>
-
-    <h3>Summary Table</h3>
-    <table>
-      <thead>
-        <tr><th>Action</th><th>Priority</th><th>Effort</th><th>Risk</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Upgrade VM size to 4–8 core</td>
-          <td><span class="pill open">Critical</span></td>
-          <td>Low (AKS node pool resize)</td>
-          <td class="warn">Brief rolling node replacement</td>
-        </tr>
-        <tr>
-          <td>Reduce max-pods per node to 50–60</td>
-          <td><span class="pill action">High</span></td>
-          <td>Low (AKS config change)</td>
-          <td class="good">Low</td>
-        </tr>
-        <tr>
-          <td>Lower phone-worker CPU limits</td>
-          <td><span class="pill action">High</span></td>
-          <td>Medium (profile actual usage first)</td>
-          <td class="good">Low</td>
-        </tr>
-        <tr>
-          <td>Enable Cluster Autoscaler</td>
-          <td><span class="pill resolved">Medium</span></td>
-          <td>Medium</td>
-          <td class="good">Low</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- What did NOT happen -->
-  <section>
-    <h2><span class="icon" style="background:#0d2818;">✅</span> What Went Well</h2>
-    <ul>
-      <li>The cluster <strong style="color:#e2e8f0;">self-recovered</strong> without manual intervention.</li>
-      <li>The <code>TaintManagerEviction</code> mechanism worked as designed — by reducing load it inadvertently resolved the very condition that triggered it.</li>
-      <li>No persistent data was lost. Application services resumed normally after recovery.</li>
-      <li>SigNoz log retention allowed full post-hoc reconstruction of the event timeline.</li>
-    </ul>
-  </section>
-
-</main>
-
-<footer>
-  Fetchit Engineering · Incident Report · June 26, 2026 · Node: aks-npapps2-34924295-vmss000006
-</footer>
-
-</body>
+    <footer>
+      Fetchit Engineering · Incident Report · June 26, 2026 · Node:
+      aks-npapps2-34924295-vmss000006
+    </footer>
+  </body>
 </html>
