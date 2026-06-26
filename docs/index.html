@@ -72,6 +72,7 @@
       font-size: 11px;
       font-weight: 700;
     }
+    .pill.open     { background: #4a1515; color: #fc8181; }
     .pill.resolved { background: #0d2818; color: #68d391; }
     .report-card h3 { font-size: 16px; color: #f7fafc; margin-bottom: 6px; }
     .report-card p  { font-size: 14px; color: #718096; margin: 0; }
@@ -94,6 +95,15 @@
 
 <main>
   <h2>All Reports</h2>
+
+  <a class="report-card" href="2026-06-26-kubernetes-node-starvation.html">
+    <div class="meta">
+      <span class="date">2026-06-26</span>
+      <span class="pill open">Action Required</span>
+    </div>
+    <h3>AKS Node Starvation — Kubelet Eviction Event</h3>
+    <p>102 pods on a 2-core VM reached 273% CPU limit overcommitment, starving the kubelet of CPU cycles and triggering a TaintManagerEviction. Node self-recovered. Structural changes required to prevent recurrence.</p>
+  </a>
 
   <a class="report-card" href="2026-06-26-lookup-service-processing-delay.html">
     <div class="meta">
