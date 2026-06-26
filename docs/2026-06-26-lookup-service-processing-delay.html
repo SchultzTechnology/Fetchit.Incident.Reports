@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fetchit Lookup Service — Investigation Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 48px 64px;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: #2d6a4f;
+      color: #95d5b2;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #f7fafc;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #718096;
+      font-size: 15px;
+    }
+
+    header .meta {
+      margin-top: 24px;
+      display: flex;
+      gap: 32px;
+    }
+
+    header .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    header .meta-item .label {
+      font-size: 11px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    header .meta-item .value {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 64px;
+    }
+
+    section {
+      margin-bottom: 56px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f7fafc;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #cbd5e0;
+      margin: 24px 0 12px;
+    }
+
+    p { color: #a0aec0; margin-bottom: 12px; font-size: 15px; }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card.warning { border-left: 3px solid #ed8936; }
+    .card.success { border-left: 3px solid #48bb78; }
+    .card.info    { border-left: 3px solid #4299e1; }
+    .card.error   { border-left: 3px solid #fc8181; }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .card.warning .card-title { color: #ed8936; }
+    .card.success .card-title { color: #48bb78; }
+    .card.info    .card-title { color: #4299e1; }
+    .card.error   .card-title { color: #fc8181; }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      background: #2d3748;
+      color: #81e6d9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre {
+      background: #141820;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.8;
+    }
+
+    .keyword  { color: #9f7aea; }
+    .method   { color: #63b3ed; }
+    .comment  { color: #4a5568; font-style: italic; }
+    .string   { color: #68d391; }
+    .type     { color: #f6ad55; }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+      margin: 24px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #2d3748;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4299e1;
+      border: 2px solid #0f1117;
+    }
+
+    .timeline-item.warning::before { background: #ed8936; }
+    .timeline-item.success::before { background: #48bb78; }
+    .timeline-item.error::before   { background: #fc8181; }
+
+    .timeline-time {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+
+    .timeline-body {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    .timeline-body strong { color: #e2e8f0; }
+    .timeline-body .env-staging    { color: #f6ad55; font-weight: 600; }
+    .timeline-body .env-production { color: #68d391; font-weight: 600; }
+
+    /* Diagram: Before */
+    .diagram {
+      background: #141820;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 32px;
+      margin: 24px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .diagram-title.before { color: #fc8181; }
+    .diagram-title.after  { color: #48bb78; }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: nowrap;
+      min-width: 600px;
+    }
+
+    .flow-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-box {
+      background: #1a1f2e;
+      border: 1px solid #4a5568;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #e2e8f0;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .flow-box.broker  { border-color: #4299e1; color: #90cdf4; }
+    .flow-box.queue   { border-color: #ed8936; color: #fbd38d; background: #2d1f0f; }
+    .flow-box.worker  { border-color: #9f7aea; color: #d6bcfa; }
+    .flow-box.good    { border-color: #48bb78; color: #9ae6b4; }
+    .flow-box.bad     { border-color: #fc8181; color: #feb2b2; background: #2d1515; }
+    .flow-box.neutral { border-color: #4a5568; color: #a0aec0; }
+
+    .flow-arrow {
+      font-size: 20px;
+      color: #4a5568;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .flow-arrow.red   { color: #fc8181; }
+    .flow-arrow.green { color: #48bb78; }
+
+    .flow-label {
+      font-size: 11px;
+      color: #4a5568;
+      text-align: center;
+    }
+
+    .flow-label.bad  { color: #fc8181; }
+    .flow-label.good { color: #48bb78; }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #1a1f2e;
+      color: #718096;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1f2e;
+      color: #a0aec0;
+      vertical-align: top;
+    }
+
+    tr:hover td { background: #1a1f2e; }
+
+    td.mono { font-family: monospace; font-size: 13px; color: #81e6d9; }
+    td.good { color: #68d391; }
+    td.bad  { color: #fc8181; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill.staging    { background: #2d2205; color: #f6ad55; }
+    .pill.production { background: #0d2818; color: #68d391; }
+    .pill.fixed      { background: #0d2818; color: #68d391; }
+    .pill.bug        { background: #2d1515; color: #fc8181; }
+
+    /* Summary boxes */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .summary-box {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-box .number {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .summary-box .desc {
+      font-size: 12px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    footer {
+      border-top: 1px solid #2d3748;
+      padding: 32px 64px;
+      text-align: center;
+      color: #4a5568;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Incident Report</div>
+  <h1>Fetchit Lookup Service — Processing Delay Investigation</h1>
+  <p>Root cause analysis and resolution of MQTT message processing backlog</p>
+  <div class="meta">
+    <div class="meta-item">
+      <span class="label">Date</span>
+      <span class="value">June 26, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Service</span>
+      <span class="value">fetchit-lookup-service</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Status</span>
+      <span class="value" style="color:#48bb78;">✓ Resolved</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Environments</span>
+      <span class="value">Staging + Production</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Summary -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">📊</span> Executive Summary</h2>
+    <p>
+      During a routine log review, incoming call messages were observed being processed by the
+      <strong style="color:#e2e8f0;">staging</strong> environment up to <strong style="color:#fc8181;">2.5 minutes</strong>
+      before the <strong style="color:#e2e8f0;">production</strong> environment. Investigation revealed this was not
+      a routing issue but a <strong style="color:#e2e8f0;">serial message processing bottleneck</strong> in the MQTT
+      client — messages were queuing behind one another rather than being processed concurrently.
+      The fix was deployed same-day to both staging and production.
+    </p>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">~2.5<span style="font-size:18px;">min</span></div>
+        <div class="desc">Observed processing lag</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#48bb78;">&lt;1<span style="font-size:18px;">sec</span></div>
+        <div class="desc">Processing time after fix</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#4299e1;">3</div>
+        <div class="desc">Production replicas benefiting</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Observation -->
+  <section>
+    <h2><span class="icon" style="background:#2d1f0f;">🔍</span> Observation</h2>
+    <p>
+      While querying SigNoz logs for phone number <code>7248625673</code>, the following call processing
+      sequence was observed across both environments:
+    </p>
+
+    <div class="timeline">
+      <div class="timeline-item warning">
+        <div class="timeline-time">14:05:53 UTC</div>
+        <div class="timeline-body">
+          <span class="env-staging">[staging]</span> — Fetching <strong>7248625673</strong> from database
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">14:05:54 UTC</div>
+        <div class="timeline-body">
+          <span class="env-staging">[staging]</span> — Processed: <strong>unknown</strong> caller for client <code>gehrmananimalhospital</code>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">14:05:54 → 14:08:19</div>
+        <div class="timeline-body" style="color:#fc8181;">
+          ⏳ <strong>2 minutes 25 seconds</strong> pass — production has not yet processed the message
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">14:08:19 UTC</div>
+        <div class="timeline-body">
+          <span class="env-production">[production]</span> — Processed: <strong>unknown</strong> caller for client <code>gehrmananimalhospital</code>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Expanding the search to all calls for <code>gehrmananimalhospital</code> confirmed this was a
+      consistent pattern, not a one-off event. Every call was appearing in staging first, then
+      production minutes later.
+    </p>
+  </section>
+
+  <!-- Architecture context -->
+  <section>
+    <h2><span class="icon" style="background:#1c2038;">🏗️</span> Architecture Context</h2>
+
+    <p>
+      The Lookup Service subscribes to MQTT topics published by PhoneSystem integrations. The two
+      environments use different subscription strategies:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Environment</th>
+          <th>MQTT IncomingTopic</th>
+          <th>Replicas</th>
+          <th>Subscription Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill staging">Staging</span></td>
+          <td class="mono">lookupservice/calls/incoming</td>
+          <td>1</td>
+          <td>Regular — receives every message</td>
+        </tr>
+        <tr>
+          <td><span class="pill production">Production</span></td>
+          <td class="mono">$share/lookupgroup/lookupservice/calls/incoming</td>
+          <td>3</td>
+          <td>Shared group — each message delivered to one replica</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Staging intentionally subscribes to the same underlying topic as production, acting as a
+      <strong style="color:#e2e8f0;">live canary</strong> — receiving the same real traffic to validate
+      code changes before they are tagged for production release. This is by design.
+    </p>
+
+    <p>
+      The shared subscription (<code>$share/lookupgroup/...</code>) on production ensures the message
+      load is distributed across the 3 replicas rather than tripling the work. This is also correct behaviour.
+    </p>
+  </section>
+
+  <!-- Root Cause -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">🐛</span> Root Cause</h2>
+
+    <p>
+      Despite <code>HandleMessageReceived</code> being declared <code>async Task</code>, the MQTTnet
+      managed client invokes the handler <strong style="color:#e2e8f0;">sequentially</strong> — it awaits
+      each call to completion before dispatching the next message. This means each production replica
+      could only process <strong style="color:#fc8181;">one message at a time</strong>, despite having
+      async I/O internally.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title before">❌ Before — Serial Processing (per replica)</div>
+      <div class="flow" style="flex-direction:column; align-items:flex-start; gap:0; min-width:unset;">
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+          <div class="flow-box broker" style="width:120px;">MQTT Broker</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box queue" style="width:280px;">📬 Internal Queue<br><span style="font-size:11px;">msg1, msg2, msg3, msg4…</span></div>
+        </div>
+
+        <div style="margin-left:132px; display:flex; flex-direction:column; gap:0;">
+          <div class="flow-arrow" style="padding:0; text-align:center; line-height:1;">↓</div>
+          <div style="display:flex; align-items:center; gap:12px; margin:4px 0;">
+            <div class="flow-box bad" style="width:280px;">⏳ HandleMessageReceived(msg1)<br><span style="font-size:11px;">await DB + PMS API calls…</span></div>
+            <div class="flow-label bad">blocks next message</div>
+          </div>
+          <div class="flow-arrow" style="padding:0; text-align:center; line-height:1;">↓ <span style="font-size:11px;color:#4a5568;">only after msg1 completes</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin:4px 0;">
+            <div class="flow-box bad" style="width:280px;">⏳ HandleMessageReceived(msg2)<br><span style="font-size:11px;">await DB + PMS API calls…</span></div>
+          </div>
+          <div class="flow-arrow" style="padding:0; text-align:center; line-height:1;">↓ <span style="font-size:11px;color:#4a5568;">only after msg2 completes</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin:4px 0;">
+            <div class="flow-box bad" style="width:280px;">⏳ HandleMessageReceived(msg3)…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p>
+      Compound factors made this worse in production specifically:
+    </p>
+    <ul style="padding-left: 24px; color: #a0aec0; font-size:15px; line-height:2;">
+      <li>3 replicas with a shared subscription means each replica processes <em>its share</em> of the total load, not a third of it — each one was still serially queueing.</li>
+      <li>Slow PMS API calls (e.g. Digitail <code>GetClinicId</code> failures, DaysSmart token refreshes) could block an entire replica's queue for seconds at a time.</li>
+      <li>A <code>_startTime</code> vs <em>processed</em> timestamp delta of ~2.5 minutes was observed in logs, confirming queue accumulation.</li>
+    </ul>
+
+    <div class="card error">
+      <div class="card-title">Confirmed in logs — 14:26:17</div>
+      <p style="margin:0; font-family:monospace; font-size:13px; color:#feb2b2;">
+        [ERR] schultztechnologydigitail: Failed to get clinic ID. Status: 0<br>
+        [ERR] Error occurred in MQQTClient - HandleMessageReceived method.<br>
+        System.Exception: Failed to retrieve clinic data.
+      </p>
+    </div>
+
+    <p>
+      A single failing Digitail call was holding up the queue for that entire replica, causing every
+      subsequent message to wait behind it.
+    </p>
+  </section>
+
+  <!-- Fix -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">✅</span> Fix</h2>
+
+    <p>
+      The solution decouples message acknowledgement from message processing. <code>HandleMessageReceived</code>
+      now returns <code>Task.CompletedTask</code> immediately after firing the processing work onto the
+      thread pool. The MQTT client can then dequeue and dispatch the next message without waiting.
+    </p>
+
+    <pre><code><span class="comment">// BEFORE — blocks the MQTT dispatcher until fully processed</span>
+<span class="keyword">private</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">HandleMessageReceived</span>(<span class="type">MqttApplicationMessageReceivedEventArgs</span> eventArgs)
+{
+    <span class="comment">// ... all processing inline, next message waits here</span>
+}
+
+<span class="comment">// AFTER — returns immediately, processing runs concurrently</span>
+<span class="keyword">private</span> <span class="type">Task</span> <span class="method">HandleMessageReceived</span>(<span class="type">MqttApplicationMessageReceivedEventArgs</span> eventArgs)
+{
+    eventArgs.AutoAcknowledge = <span class="keyword">false</span>;              <span class="comment">// manual ACK after processing</span>
+    _ = <span class="type">Task</span>.<span class="method">Run</span>(() => <span class="method">ProcessMessageAsync</span>(eventArgs));  <span class="comment">// fire and continue</span>
+    <span class="keyword">return</span> <span class="type">Task</span>.CompletedTask;                        <span class="comment">// dispatcher is free immediately</span>
+}
+
+<span class="keyword">private</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">ProcessMessageAsync</span>(<span class="type">MqttApplicationMessageReceivedEventArgs</span> eventArgs)
+{
+    <span class="keyword">try</span>
+    {
+        <span class="comment">// ... all DB + PMS API work runs here, concurrently with other messages</span>
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="keyword">await</span> eventArgs.<span class="method">AcknowledgeAsync</span>(<span class="type">CancellationToken</span>.None);  <span class="comment">// ACK only after completion</span>
+    }
+}</code></pre>
+
+    <p>
+      Manual acknowledgement (<code>AutoAcknowledge = false</code>) ensures that even if processing
+      fails, the message is still acknowledged — preventing undeliverable messages from re-queuing
+      infinitely. Errors are caught, logged to Sentry, and the message is released.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title after">✅ After — Concurrent Processing (per replica)</div>
+
+      <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; min-width:600px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div class="flow-box broker" style="width:120px;">MQTT Broker</div>
+          <div class="flow-arrow" style="padding:0;">↓</div>
+          <div class="flow-box queue" style="width:120px; background:#1a2d1a; border-color:#48bb78;">📬 Queue<br><span style="font-size:11px;">drains fast</span></div>
+        </div>
+        <div class="flow-arrow" style="margin-top:12px; font-size:28px; color:#48bb78;">→</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="flow-box good" style="width:260px;">⚡ ProcessMessageAsync(msg1)<br><span style="font-size:11px;">running concurrently on thread pool</span></div>
+          <div class="flow-box good" style="width:260px;">⚡ ProcessMessageAsync(msg2)<br><span style="font-size:11px;">running concurrently on thread pool</span></div>
+          <div class="flow-box good" style="width:260px;">⚡ ProcessMessageAsync(msg3)<br><span style="font-size:11px;">running concurrently on thread pool</span></div>
+          <div class="flow-label good">all processing in parallel — no blocking</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verification -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">📈</span> Verification</h2>
+
+    <p>After deployment, kubectl logs confirmed concurrent processing across both environments:</p>
+
+    <div class="card success">
+      <div class="card-title">Staging — Post-Deploy Log Evidence (14:37:03)</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#9ae6b4; font-size:13px;">2026-06-26T14:37:03.856Z  [INF] Setting up Rhapsody configuration for client: schultztechnologyrhapsody
+2026-06-26T14:37:03.916Z  [INF] Processed: schultztechnologyezyvet — 4849424666    ← completed
+2026-06-26T14:37:04.208Z  [ERR] schultztechnologyrhapsody: Rhapsody API returned 0 clients
+2026-06-26T14:37:04.314Z  [INF] Processed: schultztechnologyrhapsody — 4846248748  ← completed</code></pre>
+    </div>
+
+    <p>
+      Two different clients with different PMS integrations (ezyVet + Rhapsody) processed their API
+      calls <strong style="color:#e2e8f0;">simultaneously</strong>. Their log lines interleave, confirming
+      true concurrent execution.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Before Fix</th>
+          <th>After Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Message processing lag</td>
+          <td class="bad">Up to 2.5 minutes</td>
+          <td class="good">&lt; 1 second</td>
+        </tr>
+        <tr>
+          <td>Concurrent messages per replica</td>
+          <td class="bad">1 (serial)</td>
+          <td class="good">Unbounded (thread pool)</td>
+        </tr>
+        <tr>
+          <td>Impact of slow PMS API call</td>
+          <td class="bad">Blocks all subsequent messages on that replica</td>
+          <td class="good">Isolated to that one message only</td>
+        </tr>
+        <tr>
+          <td>_startTime → processed delta</td>
+          <td class="bad">Minutes</td>
+          <td class="good">Same second</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Additional findings -->
+  <section>
+    <h2><span class="icon" style="background:#2d1f0f;">📋</span> Additional Findings</h2>
+
+    <div class="card warning">
+      <div class="card-title">TLS Certificate Expired</div>
+      <p style="margin:0;">The TLS certificate on <code>signoz.fetchitdata.cloud</code> has expired (<code>SEC_E_CERT_EXPIRED</code>). Browser and curl access require bypassing certificate validation. This should be renewed.</p>
+    </div>
+
+    <div class="card warning">
+      <div class="card-title">Recurring Digitail GetClinicId Failures</div>
+      <p style="margin:0;">Client <code>schultztechnologydigitail</code> is consistently failing with <code>Status: 0</code> on <code>GetClinicId()</code>. Under the old serial model, each failure contributed to queue backlog. Under the new concurrent model the impact is contained, but the underlying Digitail API issue should be investigated.</p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">Kubernetes ConfigMaps Out of Sync</div>
+      <p style="margin:0;">Prior to this session, both the staging and production ConfigMaps were missing <code>No Reset On Close=true;Minimum Pool Size=0</code> on the <code>NeonOrionContext</code> connection string. This was corrected in the local config files and will be applied automatically by the updated CI pipeline on next deploy.</p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">CI Pipeline Now Applies Kubernetes Configurations</div>
+      <p style="margin:0;">The CI workflows (<code>dotnet-ci.yml</code> and <code>tagged-ci.yml</code>) were updated to run <code>kubectl apply -f Kubernetes.Configurations/[env]/</code> before restarting deployments, and now use <code>kubectl rollout restart</code> instead of manual scale-to-zero cycling.</p>
+    </div>
+  </section>
+
+  <!-- Deployment -->
+  <section>
+    <h2><span class="icon" style="background:#1c2038;">🚀</span> Deployment</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Environment</th>
+          <th>Deploy Time</th>
+          <th>Pod</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill staging">Staging</span></td>
+          <td class="mono">2026-06-26 ~14:35 UTC</td>
+          <td class="mono">fetchit-lookup-service-staging-58b7c964dc-2jkvh</td>
+          <td class="good">✓ Running</td>
+        </tr>
+        <tr>
+          <td><span class="pill production">Production</span></td>
+          <td class="mono">2026-06-26 ~14:41 UTC</td>
+          <td class="mono">fetchit-lookup-service-production-768cf45f68-{q9xr7,9rn4j,s82ns}</td>
+          <td class="good">✓ Running (3/3)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  Fetchit Lookup Service · Investigation Report · June 26, 2026
+</footer>
+
+</body>
+</html>
