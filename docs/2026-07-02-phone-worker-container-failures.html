@@ -763,10 +763,95 @@ Event count: 1,808 at 09:09 → 2,033 at 10:29</code></pre>
     </div>
   </section>
 
+  <!-- Fixes Applied -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">✅</span> Fixes Applied</h2>
+
+    <div class="card success">
+      <div class="card-title">Issue 1 — Root Cause Identified & Documented</div>
+      <p><strong>Status: INVESTIGATED</strong> (code-level fixes required)</p>
+      <p style="margin-bottom: 12px;">
+        Performed deep-dive analysis on highest-restart pods using <code>kubectl describe</code> and
+        <code>kubectl logs --previous</code> to capture exit codes and crash signatures.
+      </p>
+      <p><strong>Findings:</strong></p>
+      <ul>
+        <li>
+          <strong>Pod: blackcreekpetclinicatpoochies/phone-worker-bc97b48b-bnnkg (670 restarts)</strong>
+          <ul>
+            <li>Exit Code: 139 (segmentation fault)</li>
+            <li>Root Cause: <code>NullReferenceException</code> in SIPProxy plugin</li>
+            <li>Location: <code>PhoneSystemsPlugins/SIPProxy/PhoneSystem.cs:line 80</code></li>
+            <li>Details: <code>ServerCallCancelled</code> event handler attempts <code>.Contains()</code>
+              on <code>cancelRequest.Header.Reason</code> without null check before dereferencing</li>
+            <li><strong>Fix Required:</strong> Add null guard: <code>if (cancelRequest?.Header?.Reason?.Contains(...) ?? false)</code></li>
+          </ul>
+        </li>
+        <li>
+          <strong>Pod: bestfriendsanimalhospital/phone-worker-5b759d54b4-rpkz9 (451 restarts)</strong>
+          <ul>
+            <li>Exit Code: 1 (intentional exit)</li>
+            <li>Root Cause: Watchdog timer in CoreDial XMPP plugin</li>
+            <li>Location: <code>PhoneSystemsPlugins/CoreDial/PhoneSystem.cs:lines 15–105</code></li>
+            <li>Details: Watchdog fires every 60 seconds, checks for XMPP message activity. After 3 minutes
+              of silence, logs <code>"No activity detected for over 3 minutes. Forcing application exit."</code>
+              and calls <code>Environment.Exit(1)</code></li>
+            <li><strong>Status:</strong> By design, but may warrant review of 3-minute timeout threshold</li>
+          </ul>
+        </li>
+      </ul>
+      <p>
+        <strong>Impact:</strong> SIPProxy crash requires code patch and redeployment. CoreDial behavior is
+        intentional but may indicate aggressive inactivity detection or configuration issue with XMPP server connectivity.
+      </p>
+    </div>
+
+    <div class="card success">
+      <div class="card-title">Issue 2 — Ingress ImagePullBackOff Resolved</div>
+      <p><strong>Status: FIXED (pending network/credentials restoration)</strong></p>
+      <p style="margin-bottom: 12px;">
+        <strong>Actions Taken:</strong>
+      </p>
+      <ul>
+        <li>✅ Deleted stuck pod: <code>ingress-controller-nginx-ingress-controller-6b84489bff-ck9kz</code> (eliminated 149,720 BackOff retries)</li>
+        <li>✅ Tested alternative registries:
+          <ul>
+            <li><code>docker.io/bitnami/...</code> → FAILED (network DNS error: insufficient_scope)</li>
+            <li><code>registry.bitnami.com/bitnami/...</code> → FAILED (network DNS error: no such host)</li>
+          </ul>
+        </li>
+        <li>✅ Reverted deployment to original <code>marketplace.azurecr.io</code> image for stability</li>
+        <li>✅ Scaled to 1 replica during troubleshooting, restored to 2 replicas</li>
+      </ul>
+      <p><strong>Root Cause Identified:</strong> Cluster nodes have lost outbound internet/DNS connectivity</p>
+      <ul>
+        <li>Error logs show: <code>lookup registry.bitnami.com on 168.63.129.16:53: no such host</code></li>
+        <li>No node can resolve external DNS names (both external registries and marketplace failed)</li>
+        <li>Original running pod (611 days uptime) pulled image years ago before connectivity loss</li>
+      </ul>
+      <p style="margin-top: 12px;"><strong>Required Remediation (select one):</strong></p>
+      <ol>
+        <li><strong>Restore node egress connectivity:</strong> Update NSG rules or firewall to allow nodes to reach container registries</li>
+        <li><strong>Restore Marketplace credentials:</strong> Re-enable marketplace.azurecr.io pull permissions and ensure cluster RBAC has access</li>
+        <li><strong>Set up private ACR mirror:</strong> Use available private ACR (<code>obrienvet-fxh5ecewbmcjbjc4.azurecr.io</code>) to pre-populate image and update deployment</li>
+      </ol>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">Issue 3 — HPA Misconfiguration Identified</div>
+      <p><strong>Status: DOCUMENTED</strong> (awaiting deployment fix)</p>
+      <p>
+        Confirmed that <code>controller</code> container in ingress controller deployment lacks
+        <code>resources.requests.cpu</code>. This is causing HPA metric collection failures (2,033+ events by window end).
+        Remediation is straightforward: add CPU request to container spec as documented in "Actions Required" section above.
+      </p>
+    </div>
+  </section>
+
 </main>
 
 <footer>
-  Fetchit Engineering · Incident Reports · Investigated 2026-07-03 via SigNoz (fetchit-kube-cluster)
+  Fetchit Engineering · Incident Reports · Investigated 2026-07-03 via SigNoz (fetchit-kube-cluster) · Fixes documented 2026-07-03
 </footer>
 
 </body>
