@@ -807,8 +807,9 @@ Event count: 1,808 at 09:09 → 2,033 at 10:29</code></pre>
     </div>
 
     <div class="card success">
-      <div class="card-title">Issue 2 — Ingress ImagePullBackOff Resolved</div>
-      <p><strong>Status: FIXED (pending network/credentials restoration)</strong></p>
+      <div class="card-title">Issue 2 — Ingress ImagePullBackOff Resolved (2026-07-05)</div>
+      <p><strong>Status: FIXED</strong> — See <a href="2026-07-05-ingress-controller-outage.html" style="color:#63b3ed;">July 5, 2026 incident report</a> for full details.</p>
+      <p style="margin-bottom: 4px;">Image switched to <code>registry.k8s.io/ingress-nginx/controller:v1.1.1</code> (DNS-resolvable from cluster nodes). Pod security context corrected from Bitnami <code>fsGroup:1001</code> to official image <code>runAsUser:101</code>. All ingress routes restored. 2/2 replicas running.</p>
       <p style="margin-bottom: 12px;">
         <strong>Actions Taken:</strong>
       </p>

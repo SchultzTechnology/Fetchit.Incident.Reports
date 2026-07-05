@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fetchit — Full Cluster Ingress Outage (July 5, 2026)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 48px 64px;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: #4a1515;
+      color: #fc8181;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #f7fafc;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #718096;
+      font-size: 15px;
+    }
+
+    header .meta {
+      margin-top: 24px;
+      display: flex;
+      gap: 32px;
+    }
+
+    header .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    header .meta-item .label {
+      font-size: 11px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    header .meta-item .value {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 64px;
+    }
+
+    section {
+      margin-bottom: 56px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f7fafc;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #cbd5e0;
+      margin: 24px 0 12px;
+    }
+
+    p { color: #a0aec0; margin-bottom: 12px; font-size: 15px; }
+
+    ul {
+      padding-left: 24px;
+      color: #a0aec0;
+      font-size: 15px;
+      line-height: 2;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card.warning { border-left: 3px solid #ed8936; }
+    .card.success { border-left: 3px solid #48bb78; }
+    .card.info    { border-left: 3px solid #4299e1; }
+    .card.error   { border-left: 3px solid #fc8181; }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .card.warning .card-title { color: #ed8936; }
+    .card.success .card-title { color: #48bb78; }
+    .card.info    .card-title { color: #4299e1; }
+    .card.error   .card-title { color: #fc8181; }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      background: #2d3748;
+      color: #81e6d9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre {
+      background: #141820;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.8;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+      margin: 24px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #2d3748;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4299e1;
+      border: 2px solid #0f1117;
+    }
+
+    .timeline-item.warning::before { background: #ed8936; }
+    .timeline-item.success::before { background: #48bb78; }
+    .timeline-item.error::before   { background: #fc8181; }
+
+    .timeline-time {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+
+    .timeline-body {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    .timeline-body strong { color: #e2e8f0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #1a1f2e;
+      color: #718096;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1f2e;
+      color: #a0aec0;
+      vertical-align: top;
+    }
+
+    tr:hover td { background: #1a1f2e; }
+
+    td.mono { font-family: monospace; font-size: 13px; color: #81e6d9; }
+    td.good { color: #68d391; }
+    td.bad  { color: #fc8181; }
+    td.warn { color: #f6ad55; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill.open        { background: #4a1515; color: #fc8181; }
+    .pill.resolved    { background: #0d2818; color: #68d391; }
+    .pill.chronic     { background: #2d2205; color: #f6ad55; }
+    .pill.investigating { background: #1c2d4a; color: #90cdf4; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .summary-box {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-box .number {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .summary-box .desc {
+      font-size: 12px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .diff-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .diff-block .before { border-left: 3px solid #fc8181; }
+    .diff-block .after  { border-left: 3px solid #48bb78; }
+
+    .diff-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .diff-block .before .diff-label { color: #fc8181; }
+    .diff-block .after  .diff-label { color: #48bb78; }
+
+    footer {
+      border-top: 1px solid #2d3748;
+      padding: 32px 64px;
+      text-align: center;
+      color: #4a5568;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">P0 — Full Outage</div>
+  <h1>Ingress Controller — Full Production Outage</h1>
+  <p>All production services unreachable due to zero running ingress controller pods, resolved by image swap and security context correction</p>
+  <div class="meta">
+    <div class="meta-item">
+      <span class="label">Date</span>
+      <span class="value">July 5, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Detected</span>
+      <span class="value">~18:45 UTC</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Resolved</span>
+      <span class="value">~23:25 UTC</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Duration</span>
+      <span class="value">~4h 40m (estimated)</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Services Affected</span>
+      <span class="value">orion, cleartext, broker, missedcalls (all ingress routes)</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Status</span>
+      <span class="value" style="color:#68d391;">✓ Resolved</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Summary -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">📊</span> Executive Summary</h2>
+    <p>
+      On <strong style="color:#e2e8f0;">July 5, 2026</strong>, all production services routed through the
+      nginx ingress controller became completely unreachable. The cluster nodes and pods were healthy
+      and connectable via Headlamp, but all external HTTP/HTTPS traffic was silently dropped.
+    </p>
+    <p>
+      The root cause was a <strong style="color:#fc8181;">complete absence of running ingress controller
+      pods</strong>. All replicas were either in <code>Evicted</code> or <code>ImagePullBackOff</code>
+      state. This was a continuation of an image pull issue first identified in the
+      <a href="2026-07-02-phone-worker-container-failures.html" style="color:#63b3ed;">July 2, 2026 incident</a>,
+      where the original image from <code>marketplace.azurecr.io</code> became unpullable.
+      A prior remediation attempt had updated the image to <code>registry.bitnami.com</code>, which is
+      not resolvable from cluster nodes — leaving every new pod unable to pull.
+    </p>
+    <p>
+      The incident was resolved by switching to the functionally equivalent official image from
+      <code>registry.k8s.io/ingress-nginx/controller:v1.1.1</code> and correcting the pod security
+      context to match what the official image requires.
+    </p>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">4</div>
+        <div class="desc">Production services down</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">0</div>
+        <div class="desc">Running ingress pods at time of detection</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#f6ad55;">~4h 40m</div>
+        <div class="desc">Estimated outage duration</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#68d391;">2</div>
+        <div class="desc">Deployment patches to resolve</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Affected Services -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">🔴</span> Affected Services</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Hostname</th>
+          <th>Namespace</th>
+          <th>During Outage</th>
+          <th>Post-Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">orion.fetchitdata.cloud</td>
+          <td class="mono">fetchit-orion</td>
+          <td class="bad">Unreachable (connection refused / timeout)</td>
+          <td class="good">✓ HTTP 200</td>
+        </tr>
+        <tr>
+          <td class="mono">cleartext.fetchitdata.cloud</td>
+          <td class="mono">cleartext-api</td>
+          <td class="bad">Unreachable</td>
+          <td class="good">✓ HTTP 200</td>
+        </tr>
+        <tr>
+          <td class="mono">broker.fetchitdata.cloud</td>
+          <td class="mono">emqx-broker</td>
+          <td class="bad">Unreachable</td>
+          <td class="good">✓ HTTP 200</td>
+        </tr>
+        <tr>
+          <td class="mono">missedcalls.fetchitdata.cloud</td>
+          <td class="mono">fetchit-missed-call-portal</td>
+          <td class="bad">Unreachable</td>
+          <td class="good">✓ HTTP 302 (redirect — normal)</td>
+        </tr>
+        <tr>
+          <td class="mono">orion-staging.fetchitdata.cloud</td>
+          <td class="mono">fetchit-orion-staging</td>
+          <td class="bad">Unreachable</td>
+          <td class="good">✓ Restored</td>
+        </tr>
+        <tr>
+          <td class="mono">k8sapi.fetchitdata.cloud</td>
+          <td class="mono">k8sapi</td>
+          <td class="bad">Unreachable</td>
+          <td class="good">✓ Restored</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card info">
+      <div class="card-title">What Was Still Working</div>
+      <p style="margin:0;">
+        All pods across all client namespaces remained <code>Running</code>. Kubernetes control plane,
+        node connectivity, and internal cluster networking were unaffected.
+        The outage was <strong>exclusively at the ingress layer</strong> — external traffic had no
+        path into the cluster.
+      </p>
+    </div>
+  </section>
+
+  <!-- Timeline -->
+  <section>
+    <h2><span class="icon" style="background:#2d1f0f;">🕐</span> Incident Timeline</h2>
+
+    <div class="timeline">
+      <div class="timeline-item error">
+        <div class="timeline-time">2026-07-02 (prior incident)</div>
+        <div class="timeline-body">
+          <strong>Original ImagePullBackOff</strong> — ingress controller image
+          <code>marketplace.azurecr.io/bitnami/nginx-ingress-controller:1.1.1-debian-10-r0</code>
+          becomes unpullable. Azure Marketplace ACR credentials lapsed. Accumulates 149,720+ BackOff events.
+          See <a href="2026-07-02-phone-worker-container-failures.html" style="color:#63b3ed;">prior incident report</a>.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-07-02 (prior remediation attempt)</div>
+        <div class="timeline-body">
+          Image updated to <code>registry.bitnami.com/bitnami/nginx-ingress-controller:1.1.1-debian-10-r0</code>.
+          New pods fail with <strong>DNS resolution failure</strong> — <code>registry.bitnami.com</code>
+          returns <code>NXDOMAIN</code> from the cluster's DNS resolver (<code>168.63.129.16</code>).
+          New replicas stuck in <code>ImagePullBackOff</code> (deployment hash <code>866b8c86cc</code>).
+        </div>
+      </div>
+      <div class="timeline-item error">
+        <div class="timeline-time">2026-07-05 ~18:45 UTC — Outage detected</div>
+        <div class="timeline-body">
+          <strong>All production services unreachable.</strong> Cluster accessible via Headlamp, pods
+          showing healthy, but no external HTTP responses. Last running ingress pod
+          had been evicted; new replicas stuck in ImagePullBackOff. Zero pods serving traffic.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-07-05 ~23:15 UTC — Image swap applied</div>
+        <div class="timeline-body">
+          Image patched to <code>registry.k8s.io/ingress-nginx/controller:v1.1.1</code> — DNS resolves
+          correctly from all nodes. New pod (<code>549f45fb56-rz9qf</code>) created but enters
+          <code>CrashLoopBackOff</code> immediately.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-07-05 ~23:17 UTC — Security context mismatch discovered</div>
+        <div class="timeline-body">
+          New pod crashes with: <code>could not create PEM certificate file
+          /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied</code>.
+          Root cause: deployment had <code>fsGroup: 1001</code> (bitnami-specific), but the official
+          image expects <code>runAsUser: 101</code>. Container writes to paths owned by root, blocked by wrong UID.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-07-05 ~23:20 UTC — Security context patched</div>
+        <div class="timeline-body">
+          Pod security context updated: removed <code>fsGroup: 1001</code>, set <code>runAsUser: 101</code>,
+          <code>runAsGroup: 101</code>, added <code>NET_BIND_SERVICE</code> capability.
+          New pod <code>59db57cc49-4d9wz</code> starts successfully.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-07-05 ~23:25 UTC — Resolved</div>
+        <div class="timeline-body">
+          <strong>Rollout complete.</strong> 2/2 ingress controller replicas running.
+          <code>orion.fetchitdata.cloud</code> returns HTTP 200. All production services confirmed healthy.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Root Cause -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">🔍</span> Root Cause Analysis</h2>
+
+    <h3>Primary: Ingress Image Chain Failure</h3>
+    <p>
+      The outage was a continuation of the July 2 incident. The ingress controller deployment had
+      been configured with a Bitnami-distributed image from Azure Marketplace that became unpullable.
+      A prior fix attempt changed the registry to <code>registry.bitnami.com</code>, which cluster nodes
+      cannot resolve via DNS. As old pods were evicted over time, new replacement pods could not start,
+      reducing the running replica count to zero.
+    </p>
+
+    <div class="card error">
+      <div class="card-title">The Failure Chain</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#feb2b2; font-size:13px;">marketplace.azurecr.io/bitnami/nginx-ingress-controller:1.1.1  (lapsed credentials)
+        ↓ remediation attempt
+registry.bitnami.com/bitnami/nginx-ingress-controller:1.1.1    (DNS: NXDOMAIN from nodes)
+        ↓ all new pods ImagePullBackOff
+        ↓ all old evicted pods non-recoverable
+        ↓ 0/2 replicas running
+        ↓ LoadBalancer has no endpoints
+        ↓ ALL ingress routes return connection refused</code></pre>
+    </div>
+
+    <h3>Secondary: Security Context Mismatch on Image Swap</h3>
+    <p>
+      When the image was correctly changed to <code>registry.k8s.io/ingress-nginx/controller:v1.1.1</code>,
+      the pod still crashed immediately due to the security context carried over from the original
+      Bitnami deployment. Bitnami images run as UID 1001; the official ingress-nginx image expects
+      UID 101. With <code>fsGroup: 1001</code> applied, the container could not write the SSL certificate
+      file required during startup initialization.
+    </p>
+
+    <pre><code>F0705 23:17:39.511773  7  ssl.go:388
+unexpected error storing fake SSL Cert:
+could not create PEM certificate file /etc/ingress-controller/ssl/default-fake-certificate.pem:
+open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied</code></pre>
+
+  </section>
+
+  <!-- Fixes Applied -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">✅</span> Fixes Applied</h2>
+
+    <h3>Fix 1 — Ingress Controller Image (Critical)</h3>
+    <p>Switched from the unreachable Bitnami registry to the official upstream ingress-nginx image on <code>registry.k8s.io</code>, which resolves correctly from all cluster nodes. The entrypoint (<code>/nginx-ingress-controller</code>) and all command-line args are identical between both distributions at v1.1.1.</p>
+
+    <div class="diff-block">
+      <div class="card before">
+        <div class="diff-label">Before</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#feb2b2;">registry.bitnami.com/bitnami/nginx-ingress-controller:1.1.1-debian-10-r0</code></pre>
+      </div>
+      <div class="card after">
+        <div class="diff-label">After</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#9ae6b4;">registry.k8s.io/ingress-nginx/controller:v1.1.1</code></pre>
+      </div>
+    </div>
+
+    <h3>Fix 2 — Pod Security Context (Critical)</h3>
+    <p>Corrected the security context to match the official ingress-nginx image's expected UID/GID, removing the Bitnami-inherited <code>fsGroup: 1001</code> and setting the correct <code>runAsUser: 101</code> with <code>NET_BIND_SERVICE</code> capability required to bind ports 80 and 443.</p>
+
+    <div class="diff-block">
+      <div class="card before">
+        <div class="diff-label">Before (Bitnami-inherited)</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#feb2b2;">spec:
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - securityContext:
+            allowPrivilegeEscalation: true</code></pre>
+      </div>
+      <div class="card after">
+        <div class="diff-label">After (official image)</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#9ae6b4;">spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - securityContext:
+            allowPrivilegeEscalation: true
+            runAsUser: 101
+            capabilities:
+              add: ["NET_BIND_SERVICE"]</code></pre>
+      </div>
+    </div>
+
+    <div class="card success">
+      <div class="card-title">Post-Fix Verification</div>
+      <table style="margin:0;">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ingress controller replicas</td>
+            <td class="good">2/2 Running</td>
+          </tr>
+          <tr>
+            <td>orion.fetchitdata.cloud</td>
+            <td class="good">HTTP 200</td>
+          </tr>
+          <tr>
+            <td>cleartext.fetchitdata.cloud</td>
+            <td class="good">HTTP 200</td>
+          </tr>
+          <tr>
+            <td>broker.fetchitdata.cloud</td>
+            <td class="good">HTTP 200</td>
+          </tr>
+          <tr>
+            <td>missedcalls.fetchitdata.cloud</td>
+            <td class="good">HTTP 302 (redirect — expected)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Action Items -->
+  <section>
+    <h2><span class="icon" style="background:#2d2205;">⚡</span> Outstanding Action Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Item</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill resolved">Done</span></td>
+          <td>Switch ingress image to <code>registry.k8s.io/ingress-nginx/controller:v1.1.1</code></td>
+          <td>Engineering</td>
+          <td class="good">Applied 2026-07-05</td>
+        </tr>
+        <tr>
+          <td><span class="pill resolved">Done</span></td>
+          <td>Fix ingress pod security context (runAsUser: 101, NET_BIND_SERVICE)</td>
+          <td>Engineering</td>
+          <td class="good">Applied 2026-07-05</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Persist the ingress deployment fix to the Helm chart / IaC so it survives future redeployments</td>
+          <td>Engineering / DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Add CPU resource requests to ingress controller container to fix broken HPA (from Jul 2 report)</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Set up an alerting rule on ingress controller replica count going to 0</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Lessons Learned -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">📝</span> Lessons Learned</h2>
+
+    <div class="card warning">
+      <div class="card-title">Remediation Validation</div>
+      <p style="margin:0;">
+        The prior fix on July 2 changed the image registry without validating that the new registry was
+        reachable from cluster nodes. DNS resolution for external registries should always be tested
+        from within the cluster (<code>kubectl run dns-test --image=busybox ...</code>) before applying
+        an image change, especially for critical infrastructure components.
+      </p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">Image Registry Strategy</div>
+      <p style="margin:0;">
+        The cluster should maintain a private ACR mirror for critical infrastructure images
+        (ingress controller, cert-manager, etc.) to avoid dependency on third-party registries and
+        marketplace credentials. The private ACR (<code>obrienvet-fxh5ecewbmcjbjc4.azurecr.io</code>)
+        already exists in the environment and should be used as a pull-through cache.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Fetchit Engineering · Incident Reports
+</footer>
+
+</body>
+</html>

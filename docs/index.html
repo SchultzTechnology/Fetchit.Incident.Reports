@@ -96,6 +96,15 @@
 <main>
   <h2>All Reports</h2>
 
+  <a class="report-card" href="2026-07-05-ingress-controller-outage.html">
+    <div class="meta">
+      <span class="date">2026-07-05</span>
+      <span class="pill resolved">Resolved</span>
+    </div>
+    <h3>Ingress Controller — Full Production Outage</h3>
+    <p>All production services (orion, cleartext, broker, missedcalls) unreachable for ~4h 40m due to zero running ingress controller pods. Caused by a chain of failed image registry migrations from marketplace.azurecr.io → registry.bitnami.com (DNS unresolvable). Resolved by switching to registry.k8s.io/ingress-nginx/controller:v1.1.1 and correcting pod security context. Concurrent RingCentral NullReferenceException also patched.</p>
+  </a>
+
   <a class="report-card" href="2026-07-02-phone-worker-container-failures.html">
     <div class="meta">
       <span class="date">2026-07-02</span>
