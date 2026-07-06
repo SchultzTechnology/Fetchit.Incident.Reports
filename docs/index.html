@@ -114,15 +114,6 @@
     <p>Multiple phone-worker pods across 7+ client namespaces in CrashLoopBackOff (up to 670 restarts). Concurrent ingress controller ImagePullBackOff (149k+ retries) and broken HPA due to missing CPU resource requests. Two new HPA failure events opened during the incident window confirming active pod cycling.</p>
   </a>
 
-  <a class="report-card" href="2026-03-20-kubernetes-node-starvation.html">
-    <div class="meta">
-      <span class="date">2026-03-20</span>
-      <span class="pill open">Action Required</span>
-    </div>
-    <h3>AKS Node Starvation — Kubelet Eviction Event</h3>
-    <p>102 pods on a 2-core VM reached 273% CPU limit overcommitment, starving the kubelet of CPU cycles and triggering a TaintManagerEviction. Node self-recovered. Structural changes required to prevent recurrence.</p>
-  </a>
-
   <a class="report-card" href="2026-06-26-lookup-service-processing-delay.html">
     <div class="meta">
       <span class="date">2026-06-26</span>
@@ -130,6 +121,15 @@
     </div>
     <h3>Lookup Service — MQTT Message Processing Delay</h3>
     <p>Production calls delayed up to 2.5 minutes due to serial MQTT message handling. Root cause: MQTTnet managed client awaiting each handler sequentially. Fixed by decoupling dispatch from processing using Task.Run with manual acknowledgement.</p>
+  </a>
+
+  <a class="report-card" href="2026-03-20-kubernetes-node-starvation.html">
+    <div class="meta">
+      <span class="date">2026-03-20</span>
+      <span class="pill open">Action Required</span>
+    </div>
+    <h3>AKS Node Starvation — Kubelet Eviction Event</h3>
+    <p>102 pods on a 2-core VM reached 273% CPU limit overcommitment, starving the kubelet of CPU cycles and triggering a TaintManagerEviction. Node self-recovered. Structural changes required to prevent recurrence.</p>
   </a>
 
 </main>
