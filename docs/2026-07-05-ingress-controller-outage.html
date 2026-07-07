@@ -332,7 +332,7 @@
 <header>
   <div class="badge">P0 — Full Outage</div>
   <h1>Ingress Controller — Full Production Outage</h1>
-  <p>All production services unreachable due to zero running ingress controller pods, resolved by image swap and security context correction</p>
+  <p>All production services unreachable due to zero running ingress controller pods, compounded by a security context mismatch on image swap</p>
   <div class="meta">
     <div class="meta-item">
       <span class="label">Date</span>
@@ -435,7 +435,7 @@
         <tr>
           <td class="mono">broker.fetchitdata.cloud</td>
           <td class="mono">emqx-broker</td>
-          <td class="bad">Unreachable</td>
+          <td class="bad">Unreachable (MQTT over WebSocket broken)</td>
           <td class="good">✓ HTTP 200</td>
         </tr>
         <tr>
@@ -463,7 +463,7 @@
       <div class="card-title">What Was Still Working</div>
       <p style="margin:0;">
         All pods across all client namespaces remained <code>Running</code>. Kubernetes control plane,
-        node connectivity, and internal cluster networking were unaffected.
+        node connectivity, phone-worker processing, and internal cluster networking were unaffected.
         The outage was <strong>exclusively at the ingress layer</strong> — external traffic had no
         path into the cluster.
       </p>
@@ -499,6 +499,15 @@
           <strong>All production services unreachable.</strong> Cluster accessible via Headlamp, pods
           showing healthy, but no external HTTP responses. Last running ingress pod
           had been evicted; new replicas stuck in ImagePullBackOff. Zero pods serving traffic.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-07-05 ~18:45–18:50 UTC — Secondary issue identified</div>
+        <div class="timeline-body">
+          During initial investigation, a concurrent <strong>RingCentral NullReferenceException</strong>
+          was identified across 5 phone-worker namespaces causing 100+ pod restarts.
+          Caused by MQTT broker connectivity loss (connection refused on <code>broker.fetchitdata.cloud:443</code>)
+          triggering the RingCentral error handler with a null <code>errorCode</code> in the response body.
         </div>
       </div>
       <div class="timeline-item">
@@ -575,6 +584,19 @@ unexpected error storing fake SSL Cert:
 could not create PEM certificate file /etc/ingress-controller/ssl/default-fake-certificate.pem:
 open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied</code></pre>
 
+    <h3>Tertiary: RingCentral NullReferenceException (Concurrent)</h3>
+    <p>
+      A concurrent but independent issue was identified: MQTT broker connectivity loss (connection
+      refused on <code>broker.fetchitdata.cloud:443</code>) triggered rapid reconnect loops in phone-worker
+      pods, and when the RingCentral WebSocket error handler received a <code>WSG-903 Absolute timeout</code>
+      response, the null <code>errorCode</code> field in the error body caused a
+      <code>NullReferenceException</code> — crashing affected pods.
+    </p>
+    <p>
+      This secondary issue was also resolved: the MQTT broker became reachable again once the ingress
+      controller was restored (broker.fetchitdata.cloud routes through ingress), and the code-level
+      null-reference was patched in <code>PhoneSystemsPlugins/RingCentral/PhoneSystem.cs</code>.
+    </p>
   </section>
 
   <!-- Fixes Applied -->
@@ -627,6 +649,37 @@ open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied
       </div>
     </div>
 
+    <h3>Fix 3 — RingCentral NullReferenceException (Code Patch)</h3>
+    <p>
+      Applied null-safe navigation operators in <code>WsExtension_MessageReceived</code> to prevent
+      crashes when a RingCentral WebSocket error response contains a null <code>errorCode</code> or
+      <code>recoveryState</code> field. The null-forgiving operator (<code>!</code>) in the original
+      code bypassed compiler safety checks and caused a runtime crash.
+    </p>
+
+    <div class="diff-block">
+      <div class="card before">
+        <div class="diff-label">Before — PhoneSystem.cs:165</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#feb2b2;">// Crashes if errorCode is null
+if (!reconnecting
+    && wsgMessage.meta.type == MessageType.Error
+    && (wsgMessage.body.errorCode as string)!.StartsWith("OAU-"))
+
+// Crashes if recoveryState is null
+if ((wsgMessage.body.recoveryState as string) != "Successful")</code></pre>
+      </div>
+      <div class="card after">
+        <div class="diff-label">After — PhoneSystem.cs:165</div>
+        <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="font-size:12px; color:#9ae6b4;">// Null-safe: evaluates to false if errorCode is null
+if (!reconnecting
+    && wsgMessage.meta.type == MessageType.Error
+    && (wsgMessage.body?.errorCode as string)?.StartsWith("OAU-") == true)
+
+// Null-safe: evaluates to != "Successful" if recoveryState is null
+if ((wsgMessage.body?.recoveryState as string) != "Successful")</code></pre>
+      </div>
+    </div>
+
     <div class="card success">
       <div class="card-title">Post-Fix Verification</div>
       <table style="margin:0;">
@@ -657,8 +710,74 @@ open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied
             <td>missedcalls.fetchitdata.cloud</td>
             <td class="good">HTTP 302 (redirect — expected)</td>
           </tr>
+          <tr>
+            <td>RingCentral phone-worker patch</td>
+            <td class="good">Applied to PhoneSystemsPlugins/RingCentral/PhoneSystem.cs</td>
+          </tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- RingCentral Exception Detail -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">🐛</span> RingCentral Exception Detail</h2>
+
+    <p>The following phone-worker namespaces accumulated restarts during the concurrent RingCentral exception event (~14:35–18:50 UTC):</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Namespace</th>
+          <th>Restarts</th>
+          <th>Exception</th>
+          <th>Trigger</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">brentwoodanimalhospital</td>
+          <td class="bad">232</td>
+          <td class="mono">NullReferenceException at RingCentral/PhoneSystem.cs:188</td>
+          <td>WSG-903 Absolute timeout with null errorCode</td>
+        </tr>
+        <tr>
+          <td class="mono">cityvetfrisco</td>
+          <td class="bad">105</td>
+          <td class="mono">NullReferenceException at RingCentral/PhoneSystem.cs:188</td>
+          <td>WSG-903 Absolute timeout with null errorCode</td>
+        </tr>
+        <tr>
+          <td class="mono">cityvetmidcities</td>
+          <td class="bad">104</td>
+          <td class="mono">NullReferenceException at RingCentral/PhoneSystem.cs:188</td>
+          <td>WSG-903 Absolute timeout with null errorCode</td>
+        </tr>
+        <tr>
+          <td class="mono">barbershillanimalhospital</td>
+          <td class="bad">104</td>
+          <td class="mono">NullReferenceException at RingCentral/PhoneSystem.cs:188</td>
+          <td>WSG-903 Absolute timeout with null errorCode</td>
+        </tr>
+        <tr>
+          <td class="mono">cityvetmansfield</td>
+          <td class="bad">24</td>
+          <td class="mono">NullReferenceException at RingCentral/PhoneSystem.cs:188</td>
+          <td>WSG-903 Absolute timeout with null errorCode</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <div class="card-title">Cascade Path</div>
+      <p style="margin:0;">
+        broker.fetchitdata.cloud was unreachable (routed through the broken ingress controller) →
+        MQTT clients in phone-worker pods lost connectivity → rapid reconnect loop generating
+        ~14,000+ connection errors per pod → RingCentral WebSocket received WSG-903 timeout →
+        <code>WsExtension_MessageReceived</code> called with null <code>body.errorCode</code> →
+        null-forgiving operator <code>!</code> throws <code>NullReferenceException</code> →
+        pod crash → restart → repeat.
+      </p>
     </div>
   </section>
 
@@ -689,6 +808,18 @@ open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied
           <td class="good">Applied 2026-07-05</td>
         </tr>
         <tr>
+          <td><span class="pill resolved">Done</span></td>
+          <td>Patch RingCentral null-reference in <code>PhoneSystem.cs</code></td>
+          <td>Engineering</td>
+          <td class="good">Applied 2026-07-05 — needs deploy</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Deploy updated phone-worker image with RingCentral null-check fix to all namespaces</td>
+          <td>Engineering</td>
+          <td class="warn">Pending image build + rollout</td>
+        </tr>
+        <tr>
           <td><span class="pill open">P1</span></td>
           <td>Persist the ingress deployment fix to the Helm chart / IaC so it survives future redeployments</td>
           <td>Engineering / DevOps</td>
@@ -706,7 +837,18 @@ open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied
           <td>DevOps</td>
           <td class="warn">Pending</td>
         </tr>
-
+        <tr>
+          <td><span class="pill open">P3</span></td>
+          <td>Investigate and resolve the SIPProxy null-check fix (from Jul 2 report) — also needs deploy</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P3</span></td>
+          <td>Review CoreDial watchdog timeout strategy with XMPP team (from Jul 2 report)</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -722,6 +864,16 @@ open /etc/ingress-controller/ssl/default-fake-certificate.pem: permission denied
         reachable from cluster nodes. DNS resolution for external registries should always be tested
         from within the cluster (<code>kubectl run dns-test --image=busybox ...</code>) before applying
         an image change, especially for critical infrastructure components.
+      </p>
+    </div>
+
+    <div class="card warning">
+      <div class="card-title">Cascading Infrastructure Failures</div>
+      <p style="margin:0;">
+        The ingress controller outage broke MQTT connectivity (<code>broker.fetchitdata.cloud</code>),
+        which in turn triggered a code-level crash in phone-worker pods. Infrastructure dependencies
+        must be considered when assessing blast radius — a single broken deployment caused both
+        total external traffic loss AND application-level pod crashes across 5 client namespaces.
       </p>
     </div>
 
