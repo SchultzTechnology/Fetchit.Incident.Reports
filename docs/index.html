@@ -96,6 +96,15 @@
 <main>
   <h2>All Reports</h2>
 
+  <a class="report-card" href="2026-08-18-cert-manager-webhook-ca-expiry.html">
+    <div class="meta">
+      <span class="date">2026-08-18</span>
+      <span class="pill resolved">Resolved</span>
+    </div>
+    <h3>Cert-Manager Webhook CA Expiry — Cluster-Wide TLS Renewal Failure</h3>
+    <p>All Let's Encrypt certificate renewals silently blocked for 46 days due to expired cert-manager internal webhook CA. Detected when k8sapi.fetchitdata.cloud TLS cert expired, causing Orion "View Logs" to return "Failed 0". Five certificates renewed immediately on fix. Near-miss: broker cert was days from expiry, which would have repeated the July 5 cascade.</p>
+  </a>
+
   <a class="report-card" href="2026-07-05-ingress-controller-outage.html">
     <div class="meta">
       <span class="date">2026-07-05</span>

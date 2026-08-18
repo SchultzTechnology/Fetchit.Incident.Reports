@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fetchit — Cert-Manager Webhook CA Expiry (August 18, 2026)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 48px 64px;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: #4a1515;
+      color: #fc8181;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #f7fafc;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #718096;
+      font-size: 15px;
+    }
+
+    header .meta {
+      margin-top: 24px;
+      display: flex;
+      gap: 32px;
+    }
+
+    header .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    header .meta-item .label {
+      font-size: 11px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    header .meta-item .value {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 64px;
+    }
+
+    section {
+      margin-bottom: 56px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f7fafc;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #cbd5e0;
+      margin: 24px 0 12px;
+    }
+
+    p { color: #a0aec0; margin-bottom: 12px; font-size: 15px; }
+
+    ul {
+      padding-left: 24px;
+      color: #a0aec0;
+      font-size: 15px;
+      line-height: 2;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card.warning { border-left: 3px solid #ed8936; }
+    .card.success { border-left: 3px solid #48bb78; }
+    .card.info    { border-left: 3px solid #4299e1; }
+    .card.error   { border-left: 3px solid #fc8181; }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .card.warning .card-title { color: #ed8936; }
+    .card.success .card-title { color: #48bb78; }
+    .card.info    .card-title { color: #4299e1; }
+    .card.error   .card-title { color: #fc8181; }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      background: #2d3748;
+      color: #81e6d9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre {
+      background: #141820;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.8;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+      margin: 24px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #2d3748;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4299e1;
+      border: 2px solid #0f1117;
+    }
+
+    .timeline-item.warning::before { background: #ed8936; }
+    .timeline-item.success::before { background: #48bb78; }
+    .timeline-item.error::before   { background: #fc8181; }
+
+    .timeline-time {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+
+    .timeline-body {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    .timeline-body strong { color: #e2e8f0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #1a1f2e;
+      color: #718096;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1f2e;
+      color: #a0aec0;
+      vertical-align: top;
+    }
+
+    tr:hover td { background: #1a1f2e; }
+
+    td.mono { font-family: monospace; font-size: 13px; color: #81e6d9; }
+    td.good { color: #68d391; }
+    td.bad  { color: #fc8181; }
+    td.warn { color: #f6ad55; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill.open        { background: #4a1515; color: #fc8181; }
+    .pill.resolved    { background: #0d2818; color: #68d391; }
+    .pill.chronic     { background: #2d2205; color: #f6ad55; }
+    .pill.investigating { background: #1c2d4a; color: #90cdf4; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .summary-box {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-box .number {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .summary-box .desc {
+      font-size: 12px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    footer {
+      border-top: 1px solid #2d3748;
+      padding: 32px 64px;
+      text-align: center;
+      color: #4a5568;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">P1 — Service Degradation</div>
+  <h1>Cert-Manager Webhook CA Expiry — Cluster-Wide TLS Renewal Failure</h1>
+  <p>All Let's Encrypt certificate renewals silently blocked for 46 days due to expired cert-manager webhook CA. Detected when KubeBridge API (k8sapi.fetchitdata.cloud) became unreachable.</p>
+  <div class="meta">
+    <div class="meta-item">
+      <span class="label">Date</span>
+      <span class="value">August 18, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Detected</span>
+      <span class="value">~15:30 UTC</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Resolved</span>
+      <span class="value">~15:42 UTC</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Time to Fix</span>
+      <span class="value">~12 minutes</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Silent Failure Window</span>
+      <span class="value">46 days (Jul 3 – Aug 18)</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Status</span>
+      <span class="value" style="color:#68d391;">&#10003; Resolved</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Summary -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">&#128202;</span> Executive Summary</h2>
+    <p>
+      On <strong style="color:#e2e8f0;">August 18, 2026</strong>, the Orion staging UI's "View Logs"
+      feature returned <code>Failed 0</code> for all clients. Investigation revealed that the
+      KubeBridge API at <code>k8sapi.fetchitdata.cloud</code> was unreachable due to an
+      <strong style="color:#fc8181;">expired TLS certificate</strong>.
+    </p>
+    <p>
+      The TLS cert (Let's Encrypt, 90-day lifetime) had expired earlier that day at 05:42 UTC.
+      It should have been auto-renewed by cert-manager on July 19, but cert-manager's own
+      <strong style="color:#fc8181;">internal webhook CA certificate had expired on July 3</strong> —
+      silently breaking all certificate operations cluster-wide for 46 days. No renewals, no issuances,
+      no error alerts.
+    </p>
+    <p>
+      The fix required deleting the expired webhook CA secret and restarting all cert-manager components.
+      Once the webhook was healthy, cert-manager immediately processed pending renewals for 5 certificates
+      that had been blocked. All certificates across the cluster are now valid and READY.
+    </p>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">46d</div>
+        <div class="desc">Silent failure window</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">8</div>
+        <div class="desc">Certs at risk of expiry</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#f6ad55;">5</div>
+        <div class="desc">Certs renewed on fix</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#68d391;">~12m</div>
+        <div class="desc">Time to fix once detected</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Symptom -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">&#128308;</span> Symptom &amp; Detection</h2>
+
+    <p>
+      The incident was detected when the Orion UI's "View Logs" button (which calls
+      <code>GET /api/Logs/GetPodLogs?internalIdentifier=...</code>) returned <code>Failed 0</code>
+      for all clients on the staging environment.
+    </p>
+
+    <div class="card error">
+      <div class="card-title">User-Visible Symptom</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#feb2b2; font-size:13px;">GET https://orion-staging.fetchitdata.cloud/api/Logs/GetPodLogs?internalIdentifier=cityvetoaklawn
+
+Response: "Failed 0"</code></pre>
+    </div>
+
+    <h3>Why "Failed 0"?</h3>
+    <p>
+      The <code>GetPodLogs</code> endpoint calls <code>KubeBridge.GetPodLogsAsync()</code>, which uses
+      RestSharp to call <code>https://k8sapi.fetchitdata.cloud/phone-worker/{id}</code>. When RestSharp
+      cannot establish a TCP/TLS connection at all, it returns <code>StatusCode = 0</code> (not an HTTP
+      status — a transport-level failure). The code returns this as <code>$"Failed: {response.StatusCode}"</code>,
+      which renders as <code>Failed 0</code>.
+    </p>
+
+    <pre><code>// KubeBridge.cs — GetPodLogsAsync()
+if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+{
+    return $"Failed: {response.StatusCode}";  // StatusCode = 0 → "Failed 0"
+}</code></pre>
+
+    <p>
+      The underlying TLS error was: <code>SEC_E_CERT_EXPIRED (0x80090328) — The received certificate has expired.</code>
+    </p>
+  </section>
+
+  <!-- Timeline -->
+  <section>
+    <h2><span class="icon" style="background:#2d1f0f;">&#128336;</span> Incident Timeline</h2>
+
+    <div class="timeline">
+      <div class="timeline-item error">
+        <div class="timeline-time">2025-07-03 — Webhook CA issued (1-year lifetime)</div>
+        <div class="timeline-body">
+          cert-manager webhook CA secret (<code>cert-manager-webhook-ca</code>) created with a
+          self-signed certificate valid from 2025-07-03 to <strong>2026-07-03</strong>.
+          This CA is used internally to sign the webhook's serving certificate for validating
+          CertificateRequest resources.
+        </div>
+      </div>
+      <div class="timeline-item error">
+        <div class="timeline-time">2026-07-03 01:51:05 UTC — Webhook CA expires</div>
+        <div class="timeline-body">
+          <strong>The webhook CA certificate silently expires.</strong> From this point forward,
+          all cert-manager operations that require webhook validation fail with:
+          <code>tls: failed to verify certificate: x509: certificate has expired</code>.
+          No alerts fired. No visible errors in the UI. cert-manager controller logs the error
+          but continues retrying indefinitely.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-07-19 — k8sapi cert renewal due (missed)</div>
+        <div class="timeline-body">
+          cert-manager attempted to renew the <code>k8sapi.fetchitdata.cloud-tls</code> certificate
+          (renewal window: 30 days before expiry). The CertificateRequest was blocked by the
+          broken webhook. Renewal silently failed.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-07-19 through 2026-08-18 — Other renewals also blocked</div>
+        <div class="timeline-body">
+          Certificates for <code>broker</code>, <code>missedcalls</code>, <code>opensign</code>,
+          and <code>cleartext-staging</code> also entered their renewal windows and were similarly
+          blocked. All continued serving with their existing (still-valid) certificates.
+        </div>
+      </div>
+      <div class="timeline-item error">
+        <div class="timeline-time">2026-08-18 05:42:01 UTC — k8sapi TLS cert expires</div>
+        <div class="timeline-body">
+          <strong>The k8sapi.fetchitdata.cloud TLS certificate expires.</strong> The nginx ingress
+          controller begins serving the expired cert. All clients connecting to
+          <code>https://k8sapi.fetchitdata.cloud</code> receive <code>SEC_E_CERT_EXPIRED</code>,
+          including the Orion application's RestSharp calls.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-08-18 ~15:30 UTC — Symptom detected</div>
+        <div class="timeline-body">
+          "View Logs" in Orion staging returns <code>Failed 0</code> for client
+          <code>cityvetoaklawn</code>. Investigation begins.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-08-18 ~15:32 UTC — TLS expiry confirmed</div>
+        <div class="timeline-body">
+          <code>curl -v https://k8sapi.fetchitdata.cloud/</code> returns
+          <code>SEC_E_CERT_EXPIRED</code>. Certificate inspection shows
+          <code>notAfter=Aug 18 05:42:01 2026 GMT</code>.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-08-18 ~15:34 UTC — Webhook CA identified as root cause</div>
+        <div class="timeline-body">
+          cert-manager controller logs show repeated errors:
+          <code>failed calling webhook "webhook.cert-manager.io": tls: x509: certificate has expired
+          (current time after 2026-07-03T01:51:05Z)</code>. Webhook CA secret inspection confirms
+          expiry on July 3.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-08-18 ~15:36 UTC — Expired CA secret deleted</div>
+        <div class="timeline-body">
+          <code>kubectl delete secret cert-manager-webhook-ca -n cert-manager</code> executed.
+          All three cert-manager deployments (controller, cainjector, webhook) restarted.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-08-18 ~15:38 UTC — Webhook regenerates CA</div>
+        <div class="timeline-body">
+          New webhook pod starts, cainjector generates a fresh CA (valid through 2027-08-18).
+          Webhook logs: <code>"Updated cert-manager TLS certificate"</code> and
+          <code>"Detected root CA rotation — regenerating serving certificates"</code>.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-08-18 ~15:39 UTC — ACME challenge issued for k8sapi</div>
+        <div class="timeline-body">
+          cert-manager creates CertificateRequest revision 5, ACME Order, and HTTP-01 Challenge
+          for <code>k8sapi.fetchitdata.cloud</code>. Solver pod, service, and ingress deployed
+          automatically.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-08-18 ~15:41 UTC — New certificate issued</div>
+        <div class="timeline-body">
+          Let's Encrypt issues a new certificate for <code>k8sapi.fetchitdata.cloud</code>
+          (valid through 2026-11-16). Secret <code>k8sapi.fetchitdata.cloud-tls</code> updated.
+          Certificate status: <code>READY = True</code>.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-08-18 ~15:42 UTC — All services verified</div>
+        <div class="timeline-body">
+          <code>curl https://k8sapi.fetchitdata.cloud/...</code> returns HTTP 200.
+          All 8 cluster certificates show <code>READY = True</code>. 5 additional certs
+          (broker, missedcalls, opensign, cleartext-staging, k8sapi) also renewed.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Root Cause -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">&#128269;</span> Root Cause Analysis</h2>
+
+    <h3>Primary: Cert-Manager Webhook CA Expiry</h3>
+    <p>
+      cert-manager uses a Kubernetes <strong>ValidatingWebhookConfiguration</strong> to validate
+      all CertificateRequest resources before they are persisted. This webhook runs as its own
+      deployment (<code>cert-manager-webhook</code>) and serves HTTPS using a self-signed CA
+      stored in the secret <code>cert-manager-webhook-ca</code> in the <code>cert-manager</code>
+      namespace.
+    </p>
+    <p>
+      This CA has a <strong>1-year fixed lifetime</strong> and <strong>does not auto-rotate</strong>
+      in the installed version. When it expired on July 3, 2026, the Kubernetes API server could
+      no longer verify the webhook's TLS certificate when calling it for validation. Every
+      CertificateRequest creation was rejected with an internal webhook TLS error.
+    </p>
+
+    <div class="card error">
+      <div class="card-title">The Failure Chain</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#feb2b2; font-size:13px;">cert-manager-webhook-ca secret expires (Jul 3, 1-year self-signed CA)
+    ↓
+Kubernetes API rejects all webhook calls (x509: certificate has expired)
+    ↓
+All CertificateRequest creations fail silently (re-queued indefinitely)
+    ↓
+No Let's Encrypt renewals succeed cluster-wide for 46 days
+    ↓
+k8sapi.fetchitdata.cloud TLS cert expires (Aug 18, first to hit 90-day limit)
+    ↓
+RestSharp returns StatusCode=0 (TLS handshake failure)
+    ↓
+Orion displays "Failed 0" for pod log requests</code></pre>
+    </div>
+
+    <h3>Why Was This Silent for 46 Days?</h3>
+    <ul>
+      <li>cert-manager controller logged the webhook error but <strong>no alerting</strong> was configured on cert-manager logs or Certificate Ready state</li>
+      <li>The Certificate resources continued showing <code>READY = True</code> with stale status (the condition was not updated until the secret was deleted)</li>
+      <li>All existing certificates remained valid during the 46-day window — the failure only became visible when the first cert actually expired</li>
+      <li>The k8sapi endpoint is only called from the Orion UI's "View Logs" feature, which is used infrequently</li>
+    </ul>
+
+    <h3>Certs at Risk</h3>
+    <p>
+      If not detected today, the following certificates would have expired over the coming weeks,
+      causing cascading outages similar to the
+      <a href="2026-07-05-ingress-controller-outage.html" style="color:#63b3ed;">July 5 ingress outage</a>:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Certificate</th>
+          <th>Would Have Expired</th>
+          <th>Days Away</th>
+          <th>Impact if Expired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">k8sapi.fetchitdata.cloud</td>
+          <td class="bad">Aug 18 (today)</td>
+          <td class="bad">0</td>
+          <td>KubeBridge API / Orion pod logs</td>
+        </tr>
+        <tr>
+          <td class="mono">orion.fetchitdata.cloud</td>
+          <td class="warn">Sep 18</td>
+          <td class="warn">31</td>
+          <td class="bad">Full Orion production outage</td>
+        </tr>
+        <tr>
+          <td class="mono">orion-staging.fetchitdata.cloud</td>
+          <td class="warn">Sep 21</td>
+          <td class="warn">34</td>
+          <td>Orion staging outage</td>
+        </tr>
+        <tr>
+          <td class="mono">cleartext.fetchitdata.cloud</td>
+          <td class="warn">Sep 25</td>
+          <td class="warn">38</td>
+          <td class="bad">Cleartext API production outage</td>
+        </tr>
+        <tr>
+          <td class="mono">broker.fetchitdata.cloud</td>
+          <td class="warn">blocked (pre-fix)</td>
+          <td>—</td>
+          <td class="bad">All MQTT / phone-worker connectivity (repeat of Jul 5 cascade)</td>
+        </tr>
+        <tr>
+          <td class="mono">missedcalls.fetchitdata.cloud</td>
+          <td class="warn">blocked (pre-fix)</td>
+          <td>—</td>
+          <td>Missed call portal outage</td>
+        </tr>
+        <tr>
+          <td class="mono">opensign.fetchitdata.cloud</td>
+          <td class="warn">blocked (pre-fix)</td>
+          <td>—</td>
+          <td>OpenSign outage</td>
+        </tr>
+        <tr>
+          <td class="mono">cleartext-staging.fetchitdata.cloud</td>
+          <td class="warn">blocked (pre-fix)</td>
+          <td>—</td>
+          <td>Cleartext staging outage</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <div class="card-title">Near Miss — Broker Expiry</div>
+      <p style="margin:0;">
+        Had the broker certificate expired before detection, it would have caused a repeat of the
+        <a href="2026-07-05-ingress-controller-outage.html" style="color:#63b3ed;">July 5 cascade</a>:
+        all phone-worker pods lose MQTT connectivity → RingCentral pods crash on
+        NullReferenceException → 200+ client namespaces affected. The broker cert's previous renewal
+        was 90 days old and its renewal had been blocked — it was effectively days away from expiry.
+      </p>
+    </div>
+  </section>
+
+  <!-- Fix Applied -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">&#10004;</span> Fix Applied</h2>
+
+    <h3>Step 1 — Delete Expired Webhook CA Secret</h3>
+    <pre><code>kubectl delete secret cert-manager-webhook-ca -n cert-manager</code></pre>
+
+    <h3>Step 2 — Restart All Cert-Manager Components</h3>
+    <pre><code>kubectl rollout restart deployment cert-manager -n cert-manager
+kubectl rollout restart deployment cert-manager-cainjector -n cert-manager
+kubectl rollout restart deployment cert-manager-webhook -n cert-manager</code></pre>
+
+    <p>
+      On restart, the cainjector regenerated a fresh self-signed CA (valid through 2027-08-18),
+      the webhook signed a new serving certificate from it, and the controller immediately began
+      processing all queued certificate renewals.
+    </p>
+
+    <h3>Certificates Renewed Automatically on Fix</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Certificate</th>
+          <th>Old Expiry</th>
+          <th>New Expiry</th>
+          <th>Revision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">k8sapi.fetchitdata.cloud</td>
+          <td class="bad">Aug 18, 2026 (expired)</td>
+          <td class="good">Nov 16, 2026</td>
+          <td>4 → 5</td>
+        </tr>
+        <tr>
+          <td class="mono">broker.fetchitdata.cloud</td>
+          <td class="warn">was overdue</td>
+          <td class="good">Nov 16, 2026</td>
+          <td>5 → 6</td>
+        </tr>
+        <tr>
+          <td class="mono">missedcalls.fetchitdata.cloud</td>
+          <td class="warn">was overdue</td>
+          <td class="good">Nov 16, 2026</td>
+          <td>2 → 3</td>
+        </tr>
+        <tr>
+          <td class="mono">opensign.fetchitdata.cloud</td>
+          <td class="warn">was overdue</td>
+          <td class="good">Nov 16, 2026</td>
+          <td>6 → 7</td>
+        </tr>
+        <tr>
+          <td class="mono">cleartext-staging.fetchitdata.cloud</td>
+          <td class="warn">was overdue</td>
+          <td class="good">Nov 16, 2026</td>
+          <td>5 → 6</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card success">
+      <div class="card-title">Post-Fix Verification</div>
+      <table style="margin:0;">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>cert-manager-webhook pod</td>
+            <td class="good">1/1 Running, serving valid TLS</td>
+          </tr>
+          <tr>
+            <td>cert-manager-cainjector pod</td>
+            <td class="good">1/1 Running</td>
+          </tr>
+          <tr>
+            <td>cert-manager controller pod</td>
+            <td class="good">1/1 Running</td>
+          </tr>
+          <tr>
+            <td>New webhook CA validity</td>
+            <td class="good">2026-08-18 → 2027-08-18 (1 year)</td>
+          </tr>
+          <tr>
+            <td>All cluster certificates READY</td>
+            <td class="good">8/8 READY = True</td>
+          </tr>
+          <tr>
+            <td><code>curl https://k8sapi.fetchitdata.cloud/...</code></td>
+            <td class="good">HTTP 200</td>
+          </tr>
+          <tr>
+            <td>Orion "View Logs" for cityvetoaklawn</td>
+            <td class="good">Returns pod logs (no longer "Failed 0")</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Action Items -->
+  <section>
+    <h2><span class="icon" style="background:#2d2205;">&#9889;</span> Action Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Item</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill resolved">Done</span></td>
+          <td>Delete expired <code>cert-manager-webhook-ca</code> secret and restart all cert-manager components</td>
+          <td>Engineering</td>
+          <td class="good">Applied 2026-08-18</td>
+        </tr>
+        <tr>
+          <td><span class="pill resolved">Done</span></td>
+          <td>Verify all 8 cluster certificates renewed to READY state</td>
+          <td>Engineering</td>
+          <td class="good">Confirmed 2026-08-18</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Set up alerting on cert-manager webhook health / Certificate READY state going False</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Set up alerting on certificate expiry approaching (e.g. &lt;14 days remaining without successful renewal)</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Calendar reminder to rotate webhook CA 30 days before next expiry (2027-07-19)</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Evaluate upgrading cert-manager to a version with automatic webhook CA rotation</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P3</span></td>
+          <td>Improve <code>KubeBridge.GetPodLogsAsync</code> error message — return the actual error (e.g. "TLS certificate expired") instead of opaque <code>Failed 0</code></td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Lessons Learned -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">&#128221;</span> Lessons Learned</h2>
+
+    <div class="card warning">
+      <div class="card-title">Silent Infrastructure Failures Are the Most Dangerous</div>
+      <p style="margin:0;">
+        This failure was completely invisible for 46 days. cert-manager's Certificate resources
+        continued reporting <code>READY = True</code> with stale status, and the webhook error
+        was only visible in controller pod logs. The first user-visible symptom appeared only when
+        a certificate actually expired — by which point 5 certificates were overdue for renewal
+        and the cluster was days away from cascading outages across broker, orion, and cleartext.
+      </p>
+    </div>
+
+    <div class="card warning">
+      <div class="card-title">Cert-Manager's Webhook CA Is a Single Point of Failure</div>
+      <p style="margin:0;">
+        A single expired self-signed CA secret — which is not managed by cert-manager itself and
+        has no auto-rotation in the installed version — disabled all certificate operations across
+        the entire cluster. This is a known issue in older cert-manager versions. Upgrading to a
+        version with automatic CA rotation (or adding a CronJob to proactively rotate it) would
+        eliminate this class of failure.
+      </p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">RestSharp StatusCode 0 = Transport Failure</div>
+      <p style="margin:0;">
+        A RestSharp <code>StatusCode</code> of <code>0</code> is not an HTTP status code — it means
+        the request never completed (DNS failure, connection refused, or TLS error). Application code
+        that surfaces this to users should distinguish transport errors from HTTP errors and provide
+        meaningful diagnostics rather than raw numeric codes.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Fetchit Engineering &middot; Incident Reports
+</footer>
+
+</body>
+</html>
