@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fetchit — SIP Traffic Mixing: Jefferson City Animal Hospital (October 1, 2026)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 48px 64px;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: #4a1515;
+      color: #fc8181;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #f7fafc;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #718096;
+      font-size: 15px;
+    }
+
+    header .meta {
+      margin-top: 24px;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    header .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    header .meta-item .label {
+      font-size: 11px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    header .meta-item .value {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 64px;
+    }
+
+    section {
+      margin-bottom: 56px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f7fafc;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #cbd5e0;
+      margin: 24px 0 12px;
+    }
+
+    p { color: #a0aec0; margin-bottom: 12px; font-size: 15px; }
+
+    ul {
+      padding-left: 24px;
+      color: #a0aec0;
+      font-size: 15px;
+      line-height: 2;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card.warning { border-left: 3px solid #ed8936; }
+    .card.success { border-left: 3px solid #48bb78; }
+    .card.info    { border-left: 3px solid #4299e1; }
+    .card.error   { border-left: 3px solid #fc8181; }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .card.warning .card-title { color: #ed8936; }
+    .card.success .card-title { color: #48bb78; }
+    .card.info    .card-title { color: #4299e1; }
+    .card.error   .card-title { color: #fc8181; }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      background: #2d3748;
+      color: #81e6d9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre {
+      background: #141820;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.8;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+      margin: 24px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #2d3748;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4299e1;
+      border: 2px solid #0f1117;
+    }
+
+    .timeline-item.warning::before { background: #ed8936; }
+    .timeline-item.success::before { background: #48bb78; }
+    .timeline-item.error::before   { background: #fc8181; }
+
+    .timeline-time {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+
+    .timeline-body {
+      font-size: 14px;
+      color: #a0aec0;
+    }
+
+    .timeline-body strong { color: #e2e8f0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #1a1f2e;
+      color: #718096;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1f2e;
+      color: #a0aec0;
+      vertical-align: top;
+    }
+
+    tr:hover td { background: #1a1f2e; }
+
+    td.mono { font-family: monospace; font-size: 13px; color: #81e6d9; }
+    td.good { color: #68d391; }
+    td.bad  { color: #fc8181; }
+    td.warn { color: #f6ad55; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill.open        { background: #4a1515; color: #fc8181; }
+    .pill.resolved    { background: #0d2818; color: #68d391; }
+    .pill.chronic     { background: #2d2205; color: #f6ad55; }
+    .pill.investigating { background: #1c2d4a; color: #90cdf4; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .summary-box {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-box .number {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .summary-box .desc {
+      font-size: 12px;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    footer {
+      border-top: 1px solid #2d3748;
+      padding: 32px 64px;
+      text-align: center;
+      color: #4a5568;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">P2 — Service Anomaly</div>
+  <h1>SIP Traffic Mixing — Misdirected Calls to Jefferson City Animal Hospital</h1>
+  <p>Inbound SIP calls and NOTIFYs addressed to <code>sip101u_stslakepine</code> were delivered to Jefferson City's phone-worker pod (registered as <code>sip100u_stsdino</code>) for ~5 hours due to stale SIP registrar bindings routed through a recycled AKS NAT port mapping.</p>
+  <div class="meta">
+    <div class="meta-item">
+      <span class="label">Date</span>
+      <span class="value">October 1, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Started</span>
+      <span class="value">~08:42 UTC</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Ended</span>
+      <span class="value">~13:57 UTC (pod rollover)</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Duration</span>
+      <span class="value">~5 hours 15 minutes</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Affected Client</span>
+      <span class="value">jeffersoncityanimalhospital</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Status</span>
+      <span class="value" style="color:#f6ad55;">&#9888; Investigating</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Summary -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">&#128202;</span> Executive Summary</h2>
+    <p>
+      On <strong style="color:#e2e8f0;">October 1, 2026</strong>, between 08:42 and 13:57 UTC,
+      the phone-worker pod for <strong style="color:#e2e8f0;">Jefferson City Animal Hospital</strong>
+      (<code>jeffersoncityanimalhospital</code> namespace) received SIP traffic addressed to two
+      different identities simultaneously:
+    </p>
+    <ul>
+      <li><code>sip100u_stsdino</code> — the correct, actively registered SIP account for this client</li>
+      <li><code>sip101u_stslakepine</code> — a different client's SIP account, misdirected to this pod</li>
+    </ul>
+    <p>
+      Both streams were processed by the <strong style="color:#e2e8f0;">same pod</strong>
+      (<code>phone-worker-679c475bb9-td45p</code>). The phone-worker application accepted and
+      processed inbound INVITEs (calls) from both identities without distinguishing them, meaning
+      at least 3 real phone calls intended for the <code>stslakepine</code> client were processed
+      as if they belonged to Jefferson City.
+    </p>
+    <p>
+      The mixing stopped at 13:57 UTC when the pod was replaced during a rolling update. The new
+      pod received only <code>stsdino</code> traffic. The root cause is a SIP registrar-side stale
+      Contact binding combined with AKS node NAT port recycling.
+    </p>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">~5h</div>
+        <div class="desc">Traffic mixing window</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#fc8181;">3+</div>
+        <div class="desc">Misdirected calls</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#f6ad55;">1</div>
+        <div class="desc">Pod affected</div>
+      </div>
+      <div class="summary-box">
+        <div class="number" style="color:#f6ad55;">2</div>
+        <div class="desc">Clients impacted</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Evidence -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">&#128308;</span> Evidence of Mixing</h2>
+
+    <p>
+      SigNoz log queries confirm both SIP identities interleaving on the same pod, same container,
+      same restart count. The <code>stslakepine</code> traffic is clearly inbound-only — it never
+      registers, only receives NOTIFY and INVITE messages.
+    </p>
+
+    <div class="card error">
+      <div class="card-title">Interleaved SIP Traffic — Same Pod</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#feb2b2; font-size:13px;">08:42:08  td45p r=7  [DINO]      Registration succeeded: sip:sip100u_stsdino@a1east.sipregistration.net
+08:42:08  td45p r=7  [DINO]      NOTIFY sip:sip100u_stsdino@10.244.0.213:5060
+08:42:08  td45p r=7  [LAKEPINE]  NOTIFY sip:sip101u_stslakepine@40.88.229.41:1117  ← first appearance
+08:42:12  td45p r=7  [LAKEPINE]  NOTIFY sip:sip101u_stslakepine@40.88.229.41:1117
+  ...
+08:43:12  td45p r=7  [DINO]      Registration succeeded: sip:sip100u_stsdino@a1east.sipregistration.net
+  ...
+13:52:07  td45p r=7  [DINO]      Registration succeeded: sip:sip100u_stsdino@...
+13:52:09  td45p r=7  [LAKEPINE]  INVITE sip:sip101u_stslakepine@40.88.229.41:1117   ← REAL CALL
+13:52:09  td45p r=7              Incoming call from sip:3366094720  (GENERAL FRED COHEN)
+13:52:09  td45p r=7              Publishing message: {"Guid":"2a12d5ca-..."...}       ← processed as Jefferson City
+  ...
+13:52:41  td45p r=7  [LAKEPINE]  INVITE sip:sip101u_stslakepine@40.88.229.41:1117   ← REAL CALL
+13:52:41  td45p r=7              Incoming call from sip:2523375668  (GENERAL CHRISTOPHER DIM)
+  ...
+13:56:18  td45p r=7  [LAKEPINE]  INVITE sip:sip101u_stslakepine@40.88.229.41:1117   ← REAL CALL
+13:56:18  td45p r=7              Incoming call from sip:9199060343  (GENERAL WIRELESS CALLER)</code></pre>
+    </div>
+
+    <h3>Two SIP Identities Compared</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>stsdino (correct)</th>
+          <th>stslakepine (misdirected)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SIP Account</td>
+          <td class="mono">sip100u_stsdino</td>
+          <td class="mono">sip101u_stslakepine</td>
+        </tr>
+        <tr>
+          <td>Contact Address</td>
+          <td class="mono">10.244.0.213:5060</td>
+          <td class="mono">40.88.229.41:1117</td>
+        </tr>
+        <tr>
+          <td>Address Type</td>
+          <td>Pod IP (internal)</td>
+          <td class="warn">AKS node external NAT IP</td>
+        </tr>
+        <tr>
+          <td>Registrations</td>
+          <td class="good">Yes — active every ~60s</td>
+          <td class="bad">None — never registers</td>
+        </tr>
+        <tr>
+          <td>NOTIFY received</td>
+          <td class="good">Yes</td>
+          <td class="bad">Yes (misdirected)</td>
+        </tr>
+        <tr>
+          <td>INVITE received</td>
+          <td class="good">Yes</td>
+          <td class="bad">Yes — at least 3 real calls</td>
+        </tr>
+        <tr>
+          <td>SIP Server</td>
+          <td class="mono" colspan="2">198.58.40.227:5060 (a1east.sipregistration.net)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Timeline -->
+  <section>
+    <h2><span class="icon" style="background:#2d1f0f;">&#128336;</span> Incident Timeline</h2>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-time">2026-10-01 00:00 UTC — Normal operation</div>
+        <div class="timeline-body">
+          Pod <code>phone-worker-679c475bb9-td45p</code> (restart count 7) running in
+          <code>jeffersoncityanimalhospital</code> namespace. Registered as
+          <code>sip:sip100u_stsdino</code> at <code>a1east.sipregistration.net</code>.
+          Only <code>stsdino</code> traffic observed. Pod IP: <code>10.244.0.213</code>.
+        </div>
+      </div>
+      <div class="timeline-item error">
+        <div class="timeline-time">2026-10-01 08:42:08 UTC — Misdirected traffic begins</div>
+        <div class="timeline-body">
+          <strong>First <code>stslakepine</code> NOTIFY arrives</strong> on the same pod,
+          addressed to <code>sip:sip101u_stslakepine@40.88.229.41:1117</code>. The SIP server
+          (<code>198.58.40.227</code>) has begun routing a different client's SIP subscription
+          traffic to an external NAT address that now maps to Jefferson City's pod.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-10-01 08:42 – 13:57 UTC — Both identities interleaved</div>
+        <div class="timeline-body">
+          For ~5 hours, the pod receives both <code>stsdino</code> registrations/calls and
+          <code>stslakepine</code> NOTIFYs/INVITEs simultaneously. The phone-worker processes
+          all incoming SIP messages without validating the target identity.
+          <strong>At least 3 INVITEs (real phone calls) addressed to <code>stslakepine</code>
+          were processed and published as Jefferson City events.</strong>
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-10-01 13:52:09 UTC — Misdirected call example</div>
+        <div class="timeline-body">
+          INVITE for <code>sip:sip101u_stslakepine@40.88.229.41:1117</code> from caller
+          <code>3366094720</code> (GENERAL FRED COHEN) arrives at Jefferson City's pod.
+          The phone-worker accepts the call, publishes an MQTT message with Jefferson City's
+          client GUID, and the call is attributed to the wrong client.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-10-01 13:57:09 UTC — Last stslakepine message</div>
+        <div class="timeline-body">
+          Final <code>stslakepine</code> NOTIFY received on pod <code>td45p</code>.
+          Simultaneously, <code>stsdino</code> registration succeeds at 13:57:09.
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-10-01 13:57:16 UTC — Pod td45p shuts down</div>
+        <div class="timeline-body">
+          Pod <code>td45p</code> logs <code>"Application is shutting down..."</code>.
+          Rolling update replaces it with pod <code>phone-worker-679c475bb9-zjglm</code>
+          on a different node (<code>aks-npapps-59438348-vmss000001</code>).
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-time">2026-10-01 13:57:18 UTC — New pod zjglm starts</div>
+        <div class="timeline-body">
+          New pod starts with CoreDial plugin. Initializes XMPP, connects to MQTT broker.
+          New pod IP: <code>10.244.2.66</code>.
+        </div>
+      </div>
+      <div class="timeline-item warning">
+        <div class="timeline-time">2026-10-01 14:00:18 UTC — CoreDial watchdog exit</div>
+        <div class="timeline-body">
+          <code>"[Coredial] No activity detected for over 3 minutes. Forcing application exit."</code>
+          — Pod <code>zjglm</code> restarts (restart count 0 → 1). This is a known CoreDial
+          pattern, not related to the SIP mixing issue.
+        </div>
+      </div>
+      <div class="timeline-item success">
+        <div class="timeline-time">2026-10-01 14:00:20 UTC — Normal operation resumes</div>
+        <div class="timeline-body">
+          After restart, pod <code>zjglm</code> registers as <code>sip100u_stsdino</code> and
+          receives <strong>only <code>stsdino</code> traffic</strong>. No further
+          <code>stslakepine</code> messages observed. The NAT port mapping to the old pod's
+          node is no longer active.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Root Cause -->
+  <section>
+    <h2><span class="icon" style="background:#2d1515;">&#128269;</span> Root Cause Analysis</h2>
+
+    <h3>How SIP Authentication Works (and Doesn't)</h3>
+    <p>
+      SIP authentication is <strong style="color:#e2e8f0;">unidirectional</strong>. When a phone-worker
+      pod sends a <code>REGISTER</code> request to the SIP registrar, it authenticates with a
+      username and password. The registrar validates the credentials and records the
+      <strong style="color:#e2e8f0;">Contact address</strong> — the IP:port from which the request
+      arrived (after NAT traversal).
+    </p>
+    <p>
+      However, when the SIP server sends <strong style="color:#e2e8f0;">inbound</strong> traffic
+      (INVITE for calls, NOTIFY for status updates) to a registered endpoint, it simply sends
+      UDP packets to the stored Contact address. <strong style="color:#fc8181;">There is no
+      authentication in the inbound direction</strong> — it's fire-and-forget UDP.
+    </p>
+
+    <div class="card error">
+      <div class="card-title">The Failure Chain</div>
+      <pre style="margin:0; background:transparent; border:none; padding:0;"><code style="color:#feb2b2; font-size:13px;">stslakepine's previous pod registered from AKS external NAT IP 40.88.229.41:1117
+    ↓
+That pod died/moved — but SIP registrar retains the stale Contact binding
+    ↓
+AKS node NAT port 1117 gets recycled → now maps to Jefferson City's pod on :5060
+    ↓
+SIP server sends stslakepine NOTIFYs/INVITEs to 40.88.229.41:1117
+    ↓
+AKS NAT translates → arrives at Jefferson City's pod UDP :5060
+    ↓
+Phone-worker accepts all SIP messages without validating target identity
+    ↓
+Calls intended for stslakepine are processed and published as Jefferson City events</code></pre>
+    </div>
+
+    <h3>NAT Port Recycling on AKS</h3>
+    <p>
+      AKS nodes use SNAT (Source NAT) for outbound traffic. When a phone-worker pod sends a
+      SIP REGISTER from inside the cluster, the AKS node translates the source address from the
+      pod's internal IP (<code>10.244.x.x:5060</code>) to the node's external IP with an
+      ephemeral source port (e.g. <code>40.88.229.41:1117</code>). The SIP registrar records
+      this NAT'd address as the Contact.
+    </p>
+    <p>
+      When the original <code>stslakepine</code> pod was evicted or rescheduled, its NAT mapping
+      was released. A subsequent mapping reuse caused port <code>1117</code> on the same external
+      IP to route into a different pod — Jefferson City's pod. The SIP registrar, still holding the
+      stale Contact binding, continued sending <code>stslakepine</code> traffic to that address.
+    </p>
+
+    <div class="card info">
+      <div class="card-title">Why the mixing stopped after pod rollover</div>
+      <p style="margin:0;">
+        When pod <code>td45p</code> was replaced by <code>zjglm</code>, the new pod landed on
+        a different node (<code>aks-npapps-59438348-vmss000001</code>) with a different external
+        IP and different NAT port assignments. The stale <code>40.88.229.41:1117</code> mapping
+        no longer routed to any active pod, so <code>stslakepine</code> traffic stopped arriving.
+        Eventually the SIP registrar's binding will expire (typically 60–300 seconds after a
+        missed re-REGISTER), and the traffic will stop entirely.
+      </p>
+    </div>
+
+    <h3>Why the Phone-Worker Accepted Foreign Traffic</h3>
+    <p>
+      The phone-worker application listens on UDP port <code>5060</code> and processes all
+      incoming SIP messages — REGISTER responses, NOTIFYs, and INVITEs — without checking
+      whether the <code>Request-URI</code> or <code>To</code> header matches the identity
+      it registered with. This means any SIP traffic that reaches the pod's port 5060 will
+      be accepted and processed, regardless of which SIP account it's addressed to.
+    </p>
+
+    <div class="card warning">
+      <div class="card-title">Impact: Wrong Client Attribution</div>
+      <p style="margin:0;">
+        At least 3 real phone calls were processed through the wrong client identity. The
+        INVITEs arrived via the <code>stslakepine</code> Contact address, but the phone-worker
+        published MQTT messages using Jefferson City's client configuration. These calls would
+        appear in Jefferson City's call log rather than the intended <code>stslakepine</code>
+        client's log. Conversely, the <code>stslakepine</code> client's real calls were silently
+        lost — they went to a pod that attributed them to someone else.
+      </p>
+    </div>
+  </section>
+
+  <!-- Self-Resolution -->
+  <section>
+    <h2><span class="icon" style="background:#0d2818;">&#10004;</span> Self-Resolution</h2>
+
+    <p>
+      The traffic mixing resolved itself at 13:57 UTC when a rolling update replaced pod
+      <code>td45p</code> with <code>zjglm</code> on a different node. No manual intervention
+      was required for the immediate symptom.
+    </p>
+
+    <div class="card success">
+      <div class="card-title">Post-Rollover Verification</div>
+      <table style="margin:0;">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>New pod <code>zjglm</code> SIP identity</td>
+            <td class="good">Only <code>sip100u_stsdino</code> traffic</td>
+          </tr>
+          <tr>
+            <td><code>stslakepine</code> traffic after 13:57</td>
+            <td class="good">None observed</td>
+          </tr>
+          <tr>
+            <td>Registration succeeding</td>
+            <td class="good">Every ~60s to a1east.sipregistration.net</td>
+          </tr>
+          <tr>
+            <td>Inbound calls routing correctly</td>
+            <td class="good">Verified — INVITEs addressed to <code>stsdino@10.244.2.66:5060</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Unanswered Questions -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">&#128270;</span> Unanswered Questions</h2>
+
+    <div class="card info">
+      <div class="card-title">Which client is stslakepine?</div>
+      <p style="margin:0;">
+        The SIP account <code>sip101u_stslakepine</code> belongs to a different Fetchit client
+        whose phone-worker pod previously ran on the same AKS node. The <code>stslakepine</code>
+        name needs to be mapped back to a client namespace to determine: (a) whether that client's
+        pod is currently running and properly registered, and (b) whether they experienced missed
+        calls during the mixing window.
+      </p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">Has this happened before?</div>
+      <p style="margin:0;">
+        SigNoz log retention only goes back to September 21, 2026. There is no evidence of mixing
+        before October 1 in the available data, but the same NAT recycling mechanism could have
+        caused similar incidents previously without detection. The phone-worker does not log a
+        warning when it receives SIP messages for a foreign identity, so prior occurrences would
+        only be visible by correlating SIP URIs across pod logs.
+      </p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">How many clients are potentially affected?</div>
+      <p style="margin:0;">
+        Any phone-worker pod using SIPProxy on the cluster is susceptible to receiving misdirected
+        traffic when NAT port mappings are recycled. With 200+ phone-worker pods sharing a small
+        number of AKS node external IPs, port reuse collisions are statistically inevitable over time.
+      </p>
+    </div>
+  </section>
+
+  <!-- Action Items -->
+  <section>
+    <h2><span class="icon" style="background:#2d2205;">&#9889;</span> Action Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Item</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Add SIP identity validation in phone-worker: reject or log-warn on incoming INVITE/NOTIFY where the Request-URI does not match the registered identity</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P1</span></td>
+          <td>Identify which client namespace <code>sip101u_stslakepine</code> belongs to and verify their pod is currently healthy and receiving calls correctly</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Investigate AKS NAT port allocation — consider configuring <code>outboundType</code> or NAT gateway with larger port pool to reduce recycling collision probability</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Evaluate using SIP <code>outbound</code> (RFC 5626) or persistent TCP/TLS connections to the SIP registrar instead of UDP, eliminating NAT port dependency</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P2</span></td>
+          <td>Add SigNoz alerting for SIP identity mismatches — detect when a pod receives SIP messages addressed to a different account than its registered identity</td>
+          <td>DevOps</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P3</span></td>
+          <td>Audit the 3 misdirected calls (callers: 3366094720, 2523375668, 9199060343) — determine if they need to be reassigned to the correct client's call log</td>
+          <td>Support</td>
+          <td class="warn">Pending</td>
+        </tr>
+        <tr>
+          <td><span class="pill open">P3</span></td>
+          <td>Reduce SIP REGISTER <code>Expires</code> header to minimize stale Contact binding lifetime (shorter expiry = faster cleanup after pod death)</td>
+          <td>Engineering</td>
+          <td class="warn">Pending</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Lessons Learned -->
+  <section>
+    <h2><span class="icon" style="background:#1c2d4a;">&#128221;</span> Lessons Learned</h2>
+
+    <div class="card warning">
+      <div class="card-title">SIP Authentication Is One-Way — Inbound Traffic Is Unauthenticated</div>
+      <p style="margin:0;">
+        SIP REGISTER requests are authenticated with username/password, but the server's inbound
+        INVITE and NOTIFY messages are sent to the stored Contact address over plain UDP with no
+        authentication. Any process listening on the destination IP:port will receive and can process
+        the traffic. Applications must validate that incoming SIP messages are addressed to their
+        registered identity.
+      </p>
+    </div>
+
+    <div class="card warning">
+      <div class="card-title">NAT Port Recycling Creates Cross-Client Contamination Risk</div>
+      <p style="margin:0;">
+        When 200+ phone-worker pods share a handful of AKS node external IPs, SNAT port mappings
+        are a finite resource that gets recycled. A stale SIP binding pointing to a recycled
+        NAT port can route one client's calls to a completely different client's pod. This is an
+        inherent risk of running SIP over UDP behind shared NAT — and it's invisible without
+        explicit identity validation in the application.
+      </p>
+    </div>
+
+    <div class="card info">
+      <div class="card-title">Pod Rollover Masked the Problem</div>
+      <p style="margin:0;">
+        The mixing resolved itself when the pod moved to a different node during a rolling update.
+        This makes the issue transient and hard to reproduce — it only occurs when a specific
+        combination of NAT port recycling and stale SIP bindings align. Without the SigNoz log
+        investigation, this incident would have gone entirely unnoticed.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Fetchit Engineering &middot; Incident Reports
+</footer>
+
+</body>
+</html>

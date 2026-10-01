@@ -96,6 +96,15 @@
 <main>
   <h2>All Reports</h2>
 
+  <a class="report-card" href="2026-10-01-sip-traffic-mixing-jefferson-city.html">
+    <div class="meta">
+      <span class="date">2026-10-01</span>
+      <span class="pill open">Investigating</span>
+    </div>
+    <h3>SIP Traffic Mixing — Misdirected Calls to Jefferson City Animal Hospital</h3>
+    <p>Inbound SIP calls addressed to sip101u_stslakepine were delivered to Jefferson City's phone-worker pod (registered as sip100u_stsdino) for ~5 hours due to stale SIP registrar bindings routed through a recycled AKS NAT port mapping. At least 3 real calls processed under the wrong client. Self-resolved on pod rollover. Application does not validate inbound SIP identity.</p>
+  </a>
+
   <a class="report-card" href="2026-08-18-cert-manager-webhook-ca-expiry.html">
     <div class="meta">
       <span class="date">2026-08-18</span>
